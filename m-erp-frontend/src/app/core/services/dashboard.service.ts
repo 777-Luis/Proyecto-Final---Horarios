@@ -59,50 +59,70 @@ export class DashboardService {
       aprendices: this.http.get<any[]>(`${this.apiUrl}/users?role=Aprendiz`).pipe(catchError(() => of([]))),
       cursos: this.http.get<any[]>(`${this.apiUrl}/cursos`).pipe(catchError(() => of([]))),
       ambientesEstado: this.http.get<any[]>(`${this.apiUrl}/ambientes/estado`).pipe(catchError(() => of([]))),
+      ambientes: this.http.get<any[]>(`${this.apiUrl}/ambientes`).pipe(catchError(() => of([]))),
       horarios: this.http.get<any[]>(`${this.apiUrl}/horarios`).pipe(catchError(() => of([]))),
       solicitudes: this.http.get<any[]>(`${this.apiUrl}/solicitudes`).pipe(catchError(() => of([]))),
       areas: this.http.get<any[]>(`${this.apiUrl}/areas`).pipe(catchError(() => of([]))),
       registroClases: this.http.get<any[]>(`${this.apiUrl}/horarios/registro-clases?fecha=${todayDate}`).pipe(catchError(() => of([])))
     }).subscribe({
-      next: (results) => {
-        const extractCount = (res: any) => res.total !== undefined ? res.total : (Array.isArray(res) ? res.length : 0);
+      next: (results: any) => {
+        const extractCount = (res: any) => {
+          if (!res) return 0;
+          if (res.meta && res.meta.total !== undefined) return res.meta.total;
+          if (res.total !== undefined) return res.total;
+          if (Array.isArray(res)) return res.length;
+          if (Array.isArray(res.data)) return res.data.length;
+          return 0;
+        };
+
+        const extractData = (res: any): any[] => Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : []);
 
         let ambientesDisponiblesCount = 0;
         let ambientesOcupadosCount = 0;
         let ambientesMantenimientoCount = 0;
-        let ambientesList: any[] = [];
+        let ambientesList: any[] = extractData(results.ambientesEstado);
         
-        if (Array.isArray(results.ambientesEstado)) {
-          ambientesList = results.ambientesEstado;
-          ambientesDisponiblesCount = ambientesList.filter(a => a.estadoMañana === 'Disponible' || a.estadoTarde === 'Disponible').length;
-          ambientesOcupadosCount = ambientesList.filter(a => a.estadoMañana === 'Ocupado' || a.estadoTarde === 'Ocupado').length;
-          ambientesMantenimientoCount = ambientesList.filter(a => a.estadoMañana === 'Mantenimiento' || a.estadoTarde === 'Mantenimiento').length;
-          
-          if (ambientesDisponiblesCount === 0 && ambientesOcupadosCount === 0) {
-            // Default mock if no data for the day
-            ambientesDisponiblesCount = ambientesList.length;
-          }
+        if (ambientesList.length > 0 && ambientesList[0].estado_manana !== undefined) {
+          ambientesDisponiblesCount = ambientesList.filter((a: any) => a.estado_manana?.disponible && a.estado_tarde?.disponible).length;
+          ambientesOcupadosCount = ambientesList.filter((a: any) => !a.estado_manana?.disponible || !a.estado_tarde?.disponible).length;
+          ambientesMantenimientoCount = 0;
+        } else {
+          // Si no hay datos, contamos la lista general
+          ambientesList = extractData(results.ambientes);
+          ambientesDisponiblesCount = ambientesList.length;
         }
 
-        const solicitudesArr = Array.isArray(results.solicitudes) ? results.solicitudes : [];
-        const solicitudesPendientes = solicitudesArr.filter(s => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').length;
-        const ultimasSolicitudes = solicitudesArr.filter(s => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').slice(0, 5);
+        const solicitudesArr = extractData(results.solicitudes);
+        const registroClasesArr = extractData(results.registroClases);
+        const areasData = extractData(results.areas);
 
-        const registroClasesArr = Array.isArray(results.registroClases) ? results.registroClases : [];
-        const clasesSuspendidas = registroClasesArr.filter((r: any) => r.estado === 'suspendida');
-        const clasesActivas = registroClasesArr.filter((r: any) => r.estado === 'ejecucion' || r.estado === 'activa');
-        const clasesRetraso = registroClasesArr.filter((r: any) => r.estado === 'retraso');
+        const solicitudesPendientes = solicitudesArr.filter((s: any) => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').length;
+        
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        const clasesActivas = registroClasesArr.filter((c: any) => 
+          c.hora_inicio <= currentTime && 
+          c.hora_fin >= currentTime &&
+          c.estado !== 'FINALIZADA' && c.estado !== 'SUSPENDIDA'
+        );
 
-        // Chart Data (Mocked distribution across real areas)
-        const areasArr = Array.isArray(results.areas) && results.areas.length > 0 ? results.areas.map(a => a.nombre) : ['Software', 'Agro', 'Bilingüismo'];
+        const clasesRetraso = registroClasesArr.filter((c: any) => 
+          c.estado === 'RETRASO' || 
+          (c.hora_inicio < currentTime && c.estado === 'PENDIENTE')
+        );
+
+        const clasesSuspendidas = registroClasesArr.filter((c: any) => c.estado === 'SUSPENDIDA');
+
+        const areasArr = areasData.length > 0 ? areasData.map((a: any) => a.nombre) : ['Software', 'Agro', 'Bilingüismo'];
         const totalInst = extractCount(results.instructores);
         const totalApr = extractCount(results.aprendices);
         
-        const insPerArea = areasArr.map((_, i) => i === 0 ? totalInst : Math.floor(totalInst / areasArr.length));
-        insPerArea[0] = totalInst - insPerArea.slice(1).reduce((a, b) => a + b, 0); // ensure sum matches
-        
-        const aprPerArea = areasArr.map((_, i) => i === 0 ? totalApr : Math.floor(totalApr / areasArr.length));
-        aprPerArea[0] = totalApr - aprPerArea.slice(1).reduce((a, b) => a + b, 0);
+        const insPerArea = areasArr.map((_: any, i: number) => i === 0 ? totalInst : Math.floor(totalInst / areasArr.length));
+        insPerArea[0] = totalInst - insPerArea.slice(1).reduce((a: number, b: number) => a + b, 0); // ensure sum matches
+
+        const aprPerArea = areasArr.map((_: any, i: number) => i === 0 ? totalApr : Math.floor(totalApr / areasArr.length));
+        aprPerArea[0] = totalApr - aprPerArea.slice(1).reduce((a: number, b: number) => a + b, 0);
 
         const poblacionChartData = {
            labels: areasArr,
@@ -117,9 +137,9 @@ export class DashboardService {
           datasets: [
             {
               data: [
-                ambientesDisponiblesCount || 1, 
-                ambientesOcupadosCount || 0, 
-                ambientesMantenimientoCount || 0
+                ambientesDisponiblesCount, 
+                ambientesOcupadosCount, 
+                ambientesMantenimientoCount
               ],
               backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
               borderWidth: 0,
@@ -142,7 +162,7 @@ export class DashboardService {
           clasesRetraso: clasesRetraso.length,
           poblacionChartData,
           doughnutChartData,
-          ultimasSolicitudes: solicitudesArr.filter(s => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').slice(0, 5),
+          ultimasSolicitudes: solicitudesArr.filter((s: any) => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').slice(0, 5),
           ambientesList: ambientesList.slice(0, 6),
           clasesSuspendidas,
           clasesTiempoReal: registroClasesArr.slice(0, 6)
