@@ -1,0 +1,155 @@
+{
+  "solicitudes_cambio": [
+    "descripcion",
+    "instructor_id",
+    "fecha_envio_admin",
+    "estado",
+    "id",
+    "fecha_solicitud",
+    "fecha_respuesta_admin",
+    "observaciones_admin",
+    "lider_area_id",
+    "tipo_solicitud"
+  ],
+  "personas": [
+    "estado",
+    "direccion",
+    "numero_documento",
+    "id",
+    "tipo_documento",
+    "municipio_id",
+    "genero",
+    "nombre",
+    "correo"
+  ],
+  "modulos": [
+    "aplicativo_id",
+    "id",
+    "descripcion",
+    "nombre"
+  ],
+  "credenciales": [
+    "password_hash",
+    "ultimo_acceso",
+    "id",
+    "username"
+  ],
+  "municipios": [
+    "id",
+    "departamento_id",
+    "nombre"
+  ],
+  "cursos": [
+    "jornada",
+    "id_curso",
+    "lider_id",
+    "id",
+    "fin_lectiva",
+    "area_id",
+    "ambiente_id",
+    "inicio_lectiva",
+    "programa_id",
+    "nivel_formacion"
+  ],
+  "horario_detalle": [
+    "instructor_id",
+    "hora_inicio",
+    "id",
+    "hora_fin",
+    "horario_id",
+    "es_transversal",
+    "dia"
+  ],
+  "areas": [
+    "id",
+    "lider_id",
+    "sede_id",
+    "nombre"
+  ],
+  "aplicativos": [
+    "descripcion",
+    "id",
+    "nombre"
+  ],
+  "servicios": [
+    "id",
+    "modulo_id",
+    "descripcion",
+    "nombre"
+  ],
+  "departamentos": [
+    "nombre",
+    "id"
+  ],
+  "roles": [
+    "nombre",
+    "descripcion",
+    "id"
+  ],
+  "matriculas": [
+    "estado",
+    "curso_id",
+    "id",
+    "aprendiz_id",
+    "fecha_matricula"
+  ],
+  "notificaciones": [
+    "referencia_solicitud_id",
+    "id",
+    "fecha",
+    "leida",
+    "mensaje",
+    "usuario_id"
+  ],
+  "migrations": [
+    "timestamp",
+    "id",
+    "name"
+  ],
+  "usuarios": [
+    "credencial_id",
+    "estado",
+    "fecha_creacion",
+    "persona_id",
+    "id",
+    "rol_id"
+  ],
+  "accesos": [
+    "id",
+    "usuario_id",
+    "ip",
+    "fecha_hora",
+    "aplicativo_id"
+  ],
+  "ambientes": [
+    "nombre",
+    "capacidad",
+    "id",
+    "area_id"
+  ],
+  "permisos": [
+    "aplicativo_id",
+    "id",
+    "usuario_id"
+  ],
+  "programas": [
+    "area_id",
+    "id",
+    "nombre"
+  ],
+  "sedes": [
+    "nombre",
+    "id",
+    "centro_formacion_id"
+  ],
+  "horarios": [
+    "jornada",
+    "id",
+    "ambiente_id",
+    "curso_id"
+  ],
+  "centro_formacion": [
+    "nombre",
+    "id"
+  ]
+}

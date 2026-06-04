@@ -1,0 +1,29 @@
+
+> m-erp-frontend@0.0.0 build
+> ng build
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+Application bundle generation failed. [4.276 seconds] - 2026-04-06T06:02:11.503Z
+
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8113: DataTableComponent is not used within the template of AdminHorariosComponent[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/horarios/horarios.component.ts:11:60:
+[37m      11 │ ...mmonModule, FormsModule, LucideAngularModule, [32mDataTableComponent[37m],
+         ╵                                                  [32m~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Lexer Error: Unexpected character [ñ] at column 13 in expression [amb.estadoMañana === 'Disponible'] at the end of the expression [amb.estadoMañana === 'Disponible'] in C:/Users/paula/OneDrive/Documentos/chronogest/m-erp-frontend/src/app/features/admin/dashboard/dashboard.component.ts@155:65[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/dashboard/dashboard.component.ts:156:65:
+[37m      156 │ ...r" [class.disponible]="[32mamb.estadoMañana === 'Disponible[37m'"></div>
+          ╵                           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Parser Error: Unexpected token 'Lexer Error: Unexpected character [ñ] at column 13 in expression [amb.estadoMañana === 'Disponible']' at column 14 in [amb.estadoMañana === 'Disponible'] in C:/Users/paula/OneDrive/Documentos/chronogest/m-erp-frontend/src/app/features/admin/dashboard/dashboard.component.ts@155:65[0m [1m[35m[plugin angular-compiler][0m
+
+    src/app/features/admin/dashboard/dashboard.component.ts:156:65:
+[37m      156 │ ...r" [class.disponible]="[32mamb.estadoMañana === 'Disponible[37m'"></div>
+          ╵                           [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m

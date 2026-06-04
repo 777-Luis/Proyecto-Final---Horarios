@@ -1,0 +1,296 @@
+<div class="config-container">
+  <!-- Sidebar Menú -->
+  <aside class="config-sidebar">
+    @for (section of sections; track section.title) {
+      <div class="section-group">
+        <div class="section-title">{{ section.title }}</div>
+        @for (item of section.items; track item.id) {
+          <button 
+            class="menu-item" 
+            [class.active]="activeTab === item.id"
+            (click)="switchTab(item.id)">
+            {{ item.label }}
+          </button>
+        }
+      </div>
+    }
+  </aside>
+
+  <!-- Content Área -->
+  <main class="config-content">
+    <div class="header-actions">
+      <h2 class="title">{{ activeTab.replace('-', ' ') }}</h2>
+      @if (activeTab !== 'accesos') {
+        <button class="btn-primary" (click)="openModal('create')">
+          <lucide-icon name="plus" [size]="18"></lucide-icon> Añadir 
+          <span style="text-transform: capitalize">{{ activeTab === 'departamentos' ? 'Departamento' : activeTab === 'municipios' ? 'Municipio' : activeTab === 'centros' ? 'Centro' : activeTab === 'sedes' ? 'Sede' : activeTab === 'areas' ? 'Área' : activeTab === 'programas' ? 'Programa' : activeTab === 'aplicativos' ? 'Aplicativo' : '' }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- Error Alert -->
+    @if (errorMessage) {
+      <div style="background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #fca5a5;">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <!-- FILTROS DE TABLAS -->
+    @if (activeTab === 'municipios') {
+      <div class="filters-bar">
+        <select class="filter-select" [(ngModel)]="filterOptions.departamento_id" (change)="onFilterChange('departamento')">
+          <option value="">Todos los Departamentos</option>
+          @for (d of srv.departamentos(); track d.id) {
+            <option [value]="d.id">{{ d.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+    @if (activeTab === 'sedes') {
+      <div class="filters-bar">
+        <select class="filter-select" [(ngModel)]="filterOptions.centro_id" (change)="onFilterChange('centro')">
+          <option value="">Todos los Centros</option>
+          @for (c of srv.centros(); track c.id) {
+            <option [value]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+    @if (activeTab === 'areas') {
+      <div class="filters-bar">
+        <select class="filter-select" [(ngModel)]="filterOptions.sede_id" (change)="onFilterChange('sede')">
+          <option value="">Todas las Sedes</option>
+          @for (s of srv.sedes(); track s.id) {
+            <option [value]="s.id">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+    @if (activeTab === 'programas') {
+      <div class="filters-bar">
+        <select class="filter-select" [(ngModel)]="filterOptions.area_id" (change)="onFilterChange('area')">
+          <option value="">Todas las Áreas</option>
+          @for (a of srv.areas(); track a.id) {
+            <option [value]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+    @if (activeTab === 'accesos') {
+      <div class="filters-bar" style="flex-wrap: wrap;">
+        <input type="text" class="filter-select" placeholder="Buscar usuario..." [(ngModel)]="auditFilters.search">
+        <input type="date" class="filter-select" [(ngModel)]="auditFilters.start_date">
+        <input type="date" class="filter-select" [(ngModel)]="auditFilters.end_date">
+        <select class="filter-select" [(ngModel)]="auditFilters.aplicativo_id">
+          <option value="">Todos los Aplicativos</option>
+          @for (app of srv.aplicativos(); track app.id) {
+            <option [value]="app.id">{{ app.nombre }}</option>
+          }
+        </select>
+        <button class="btn-primary" (click)="fetchAccesos(1)">Buscar</button>
+      </div>
+    }
+
+    <!-- TABLAS -->
+    <table>
+      <thead>
+        <tr>
+          <!-- Dynamic Headers -->
+          @if (activeTab === 'departamentos' || activeTab === 'centros') {
+            <th>Nombre</th>
+          }
+          @if (activeTab === 'municipios') {
+            <th>Nombre</th><th>Departamento</th>
+          }
+          @if (activeTab === 'sedes') {
+            <th>Nombre</th><th>Centro de Formación</th>
+          }
+          @if (activeTab === 'areas') {
+            <th>Nombre</th><th>Sede</th><th>Líder</th>
+          }
+          @if (activeTab === 'programas') {
+            <th>Nombre</th><th>Área Funcional</th><th>Tipo</th>
+          }
+          @if (activeTab === 'aplicativos') {
+            <th>Nombre</th><th>Descripción</th>
+          }
+          @if (activeTab === 'accesos') {
+            <th>Usuario</th><th>Aplicativo</th><th>Fecha y Hora</th><th>IP</th>
+          }
+
+          @if (activeTab !== 'accesos') {
+            <th style="width: 100px; text-align: center;">Acciones</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        <!-- List Rendition based on Tab -->
+        @if (activeTab === 'departamentos') { @for (row of srv.departamentos(); track row.id) {
+          <tr><td>{{ row.nombre }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'municipios') { @for (row of srv.municipios(); track row.id) {
+          <tr><td>{{ row.nombre }}</td><td>{{ row.departamento?.nombre }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'centros') { @for (row of srv.centros(); track row.id) {
+          <tr><td>{{ row.nombre }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'sedes') { @for (row of srv.sedes(); track row.id) {
+          <tr><td>{{ row.nombre }}</td><td>{{ row.centro?.nombre }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'areas') { @for (row of srv.areas(); track row.id) {
+          <tr><td>{{ row.nombre }}</td><td>{{ row.sede?.nombre }}</td><td>{{ row.lider ? (row.lider.nombre + ' ' + (row.lider.apellido || '')) : 'Sin Líder' }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'programas') { @for (row of srv.programas(); track row.id) {
+          <tr><td>{{ row.nombre }}</td><td>{{ row.area?.nombre }}</td><td>{{ row.tipo_programa || 'N/A' }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'aplicativos') { @for (row of srv.aplicativos(); track row.id) {
+          <tr><td>{{ row.nombre }}</td><td>{{ row.descripcion }}</td>
+          <td style="text-align: center;">
+            <button class="btn-icon edit" (click)="openModal('edit', row)"><lucide-icon name="pencil" [size]="16"></lucide-icon></button>
+            <button class="btn-icon delete" (click)="deleteEntity(row.id)"><lucide-icon name="trash-2" [size]="16"></lucide-icon></button>
+          </td></tr>
+        } }
+
+        @if (activeTab === 'accesos') { @for (row of srv.accesos().data; track row.id) {
+          <tr>
+            <td>{{ row.usuario || 'Desconocido' }}</td>
+            <td>{{ row.aplicativo || 'Desconocido' }}</td>
+            <td>{{ row.fecha | date:'medium' }}</td>
+            <td>{{ row.ip }}</td>
+          </tr>
+        } }
+      </tbody>
+    </table>
+
+    <!-- Pagination only for Accesos -->
+    @if (activeTab === 'accesos' && srv.accesos().meta.totalPages > 1) {
+      <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+         @for (p of getPagesArray(); track p) {
+           <button class="btn-outline" [style.background]="srv.accesos().meta.page === p ? '#ecfdf5' : 'white'" (click)="fetchAccesos(p)">{{ p }}</button>
+         }
+      </div>
+    }
+
+  </main>
+</div>
+
+<!-- MODAL UNIFICADO -->
+@if (showModal) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">{{ modalMode === 'create' ? 'Añadir' : 'Editar' }} Registro</div>
+        <button class="btn-icon" (click)="closeModal()"><lucide-icon name="x" [size]="20"></lucide-icon></button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="saveEntity()" #form="ngForm">
+          <!-- Common Field: Nombre -->
+          <div class="form-group">
+            <label>Nombre <span style="color:red">*</span></label>
+            <input class="form-control" name="nombre" [(ngModel)]="payload.nombre" required autocomplete="off">
+          </div>
+
+          <!-- Specific Fields -->
+          @if (activeTab === 'municipios') {
+            <div class="form-group">
+              <label>Departamento <span style="color:red">*</span></label>
+              <select class="form-control" name="departamento_id" [(ngModel)]="payload.departamento_id" required>
+                <option value="">Seleccione departamento...</option>
+                @for (d of srv.departamentos(); track d.id) { <option [value]="d.id">{{ d.nombre }}</option> }
+              </select>
+            </div>
+          }
+
+          @if (activeTab === 'sedes') {
+            <div class="form-group">
+              <label>Centro de Formación <span style="color:red">*</span></label>
+              <select class="form-control" name="centro_id" [(ngModel)]="payload.centro_id" required>
+                <option value="">Seleccione centro...</option>
+                @for (c of srv.centros(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+              </select>
+            </div>
+          }
+
+          @if (activeTab === 'areas') {
+            <div class="form-group">
+              <label>Sede <span style="color:red">*</span></label>
+              <select class="form-control" name="sede_id" [(ngModel)]="payload.sede_id" required>
+                <option value="">Seleccione sede...</option>
+                @for (s of srv.sedes(); track s.id) { <option [value]="s.id">{{ s.nombre }}</option> }
+              </select>
+            </div>
+            <!-- Backend area only takes Lider string currently, but in entity it's a many-to-one to person / usuario -->
+            <div class="form-group">
+              <label>Líder (Instructor)</label>
+              <select class="form-control" name="lider_id" [(ngModel)]="payload.lider_id">
+                <option value="">Sin Líder</option>
+                @for (u of srv.instructores(); track u.persona_id) { <option [value]="u.persona_id">{{ u.nombre }} {{ u.apellido || '' }}</option> }
+              </select>
+            </div>
+          }
+
+          @if (activeTab === 'programas') {
+            <div class="form-group">
+              <label>Área Funcional <span style="color:red">*</span></label>
+              <select class="form-control" name="area_id" [(ngModel)]="payload.area_id" required>
+                <option value="">Seleccione área...</option>
+                @for (a of srv.areas(); track a.id) { <option [value]="a.id">{{ a.nombre }}</option> }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Programa <span style="color:red">*</span></label>
+              <select class="form-control" name="tipo_programa" [(ngModel)]="payload.tipo_programa" required>
+                <option value="">Seleccione tipo...</option>
+                <option value="Tecnólogo">Tecnólogo</option>
+                <option value="Técnico">Técnico</option>
+                <option value="Curso">Curso</option>
+              </select>
+            </div>
+          }
+
+          @if (activeTab === 'aplicativos') {
+            <div class="form-group">
+              <label>Descripción</label>
+              <input class="form-control" name="descripcion" [(ngModel)]="payload.descripcion">
+            </div>
+          }
+
+          <div class="modal-footer" style="padding: 16px 0 0; margin-top: 24px;">
+            <button type="button" class="btn-outline" (click)="closeModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

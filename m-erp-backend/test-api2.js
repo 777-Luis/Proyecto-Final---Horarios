@@ -1,0 +1,1 @@
+const http = require('http'); http.get('http://localhost:3000/api/erp/v1/horarios/aprendiz/1342e5b5-a154-4eac-ab20-35c2309a4753', {headers: {'Authorization': 'Bearer test'}}, res => { let data = ''; res.on('data', chunk => data += chunk); res.on('end', () => console.log(data)); });

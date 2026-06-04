@@ -1,0 +1,231 @@
+﻿
+> m-erp-backend@0.0.1 start
+> nest start
+
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +29ms[39m
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDatabaseModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mTypeOrmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mErpAppsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 25272  - [39m18/03/2026, 6:32:18 p.┬ám. [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mPassportModule dependencies initialized[39m[38;5;3m +0ms[39m
+node.exe : [31m[Nest] 
+25272  - 
+[39m18/03/2026, 
+6:32:18 p.┬ám. [31m  
+ERROR[39m [38;5;3m[Ex
+ceptionHandler] [39mUn
+knownDependenciesExcept
+ion [Error]: Nest 
+can't resolve 
+dependencies of the 
+UsersService 
+(UsuarioRepository, 
+PersonaRepository, 
+CredencialRepository, 
+RolRepository, 
+PermisoRepository, ?, 
+AplicativoRepository, 
+DataSource). Please 
+make sure that the 
+argument 
+"MunicipioRepository" 
+at index [5] is 
+available in the 
+ErpUsersModule module.
+En línea: 1 Carácter: 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ([31m[Nest] 2   
+ 52...sModule modul    
+e.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+Potential solutions:
+- Is ErpUsersModule a 
+valid NestJS module?
+- If 
+"MunicipioRepository" 
+is a provider, is it 
+part of the current 
+ErpUsersModule?
+- If 
+"MunicipioRepository" 
+is exported from a 
+separate @Module, is 
+that module imported 
+within ErpUsersModule?
+  @Module({
+    imports: [ /* the 
+Module containing 
+"MunicipioRepository" 
+*/ ]
+  })
+
+For more common 
+dependency resolution 
+issues, see: https://do
+cs.nestjs.com/faq/commo
+n-errors
+    at Injector.lookupC
+omponentInParentModules
+ [90m(C:\Users\paula\O
+neDrive\Documentos\chro
+nogest\m-erp-backend\[
+39mnode_modules\[4m@ne
+stjs[24m\core\injector
+\injector.js:290:19[90
+m)[39m
+    at async 
+resolveParam [90m(C:\U
+sers\paula\OneDrive\Doc
+umentos\chronogest\m-er
+p-backend\[39mnode_mod
+ules\[4m@nestjs[24m\c
+ore\injector\injector.j
+s:140:38[90m)[39m
+    at async 
+Promise.all (index 5)
+    at async Injector.r
+esolveConstructorParams
+ [90m(C:\Users\paula\O
+neDrive\Documentos\chro
+nogest\m-erp-backend\[
+39mnode_modules\[4m@ne
+stjs[24m\core\injector
+\injector.js:169:27[90
+m)[39m
+    at async 
+Injector.loadInstance 
+[90m(C:\Users\paula\One
+Drive\Documentos\chrono
+gest\m-erp-backend\[39
+mnode_modules\[4m@nest
+js[24m\core\injector\i
+njector.js:75:13[90m)
+[39m
+    at async 
+Injector.loadProvider 
+[90m(C:\Users\paula\One
+Drive\Documentos\chrono
+gest\m-erp-backend\[39
+mnode_modules\[4m@nest
+js[24m\core\injector\i
+njector.js:103:9[90m)
+[39m
+    at async [90mC:\Us
+ers\paula\OneDrive\Docu
+mentos\chronogest\m-erp
+-backend\[39mnode_modu
+les\[4m@nestjs[24m\co
+re\injector\instance-lo
+ader.js:56:13
+    at async 
+Promise.all (index 3)
+    at async InstanceLo
+ader.createInstancesOfP
+roviders [90m(C:\Users
+\paula\OneDrive\Documen
+tos\chronogest\m-erp-ba
+ckend\[39mnode_modules
+\[4m@nestjs[24m\core\
+injector\instance-loade
+r.js:55:9[90m)[39m
+    at async [90mC:\Us
+ers\paula\OneDrive\Docu
+mentos\chronogest\m-erp
+-backend\[39mnode_modu
+les\[4m@nestjs[24m\co
+re\injector\instance-lo
+ader.js:40:13
+    at async 
+Promise.all (index 10)
+    at async InstanceLo
+ader.createInstances [
+90m(C:\Users\paula\OneD
+rive\Documentos\chronog
+est\m-erp-backend\[39m
+node_modules\[4m@nestj
+s[24m\core\injector\in
+stance-loader.js:39:9[
+90m)[39m
+    at async InstanceLo
+ader.createInstancesOfD
+ependencies [90m(C:\Us
+ers\paula\OneDrive\Docu
+mentos\chronogest\m-erp
+-backend\[39mnode_modu
+les\[4m@nestjs[24m\co
+re\injector\instance-lo
+ader.js:22:13[90m)[39
+m
+    at async [90mC:\Us
+ers\paula\OneDrive\Docu
+mentos\chronogest\m-erp
+-backend\[39mnode_modu
+les\[4m@nestjs[24m\co
+re\nest-factory.js:112:
+17
+    at async Exceptions
+Zone.asyncRun [90m(C:\
+Users\paula\OneDrive\Do
+cumentos\chronogest\m-e
+rp-backend\[39mnode_mo
+dules\[4m@nestjs[24m\
+core\errors\exceptions-
+zone.js:22:13[90m)[39
+m
+    at async NestFactor
+yStatic.initialize [90
+m(C:\Users\paula\OneDri
+ve\Documentos\chronoges
+t\m-erp-backend\[39mno
+de_modules\[4m@nestjs
+[24m\core\nest-factory.
+js:110:13[90m)[39m {
+  type: [32m'UsersServ
+ice'[39m,
+  context: {
+    index: [33m5[39m,
+    dependencies: [
+      [32m'UsuarioRepo
+sitory'[39m,
+      [32m'PersonaRepo
+sitory'[39m,
+      [32m'CredencialR
+epository'[39m,
+      [32m'RolReposito
+ry'[39m,
+      [32m'PermisoRepo
+sitory'[39m,
+      [32m'MunicipioRe
+pository'[39m,
+      [32m'AplicativoR
+epository'[39m,
+      [36m[class 
+DataSource][39m
+    ],
+    name: [32m'Municip
+ioRepository'[39m
+  },
+  metadata: {
+    id: [32m'7b19421af
+b993efd2abb5'[39m
+  },
+  moduleRef: {
+    id: [32m'c79e9bfa1
+d5ebfbcd33da'[39m
+  }
+}

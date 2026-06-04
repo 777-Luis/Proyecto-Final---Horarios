@@ -1,0 +1,26 @@
+﻿{
+    "data":  [
+                 {
+                     "id":  "5e64dfe7-1014-4ae5-bd19-267667243674",
+                     "nombre":  "Instructor de Prueba 1",
+                     "identificacion":  "10001",
+                     "correo":  "inst1@sena.com",
+                     "estado":  true,
+                     "rol":  "Instructor"
+                 },
+                 {
+                     "id":  "7aedd09d-6795-4702-939e-5db4ff3c5b4f",
+                     "nombre":  "Instructor de Prueba 2",
+                     "identificacion":  "10002",
+                     "correo":  "inst2@sena.com",
+                     "estado":  true,
+                     "rol":  "Instructor"
+                 }
+             ],
+    "meta":  {
+                 "total":  2,
+                 "page":  1,
+                 "limit":  10,
+                 "totalPages":  1
+             }
+}
