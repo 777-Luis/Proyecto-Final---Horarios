@@ -21,11 +21,13 @@ export class AuthService {
   private readonly tokenSignal = signal<string | null>(this.getInitialToken());
   readonly userContextSignal = signal<UserContext | null>(this.getInitialContext());
   private readonly isLiderSignal = signal<boolean>(false);
+  private readonly isLiderFichaSignal = signal<boolean>(false);
 
   // Computed derivatives
   readonly isAuthenticated = computed(() => !!this.tokenSignal());
   readonly currentRole = computed(() => this.userContextSignal()?.role || null);
   readonly isLeader = computed(() => this.isLiderSignal());
+  readonly isLeaderFicha = computed(() => this.isLiderFichaSignal());
 
   // APIs definitions
   private apiUrl = 'http://localhost:3000/api/erp/v1';
@@ -79,21 +81,30 @@ export class AuthService {
     this.tokenSignal.set(null);
     this.userContextSignal.set(null);
     this.isLiderSignal.set(false);
+    this.isLiderFichaSignal.set(false);
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_context');
     this.router.navigate(['/auth/login']);
   }
 
-  // Comprueba dinámicamente si es líder consultando las áreas
+  // Comprueba dinámicamente si es líder consultando las áreas y fichas
   private detectLeaderState() {
     if (this.currentRole() !== 'Instructor') return;
+
+    const pId = this.userContextSignal()?.personaId;
+    if (!pId) return;
 
     this.http.get<any[]>(`${this.apiUrl}/areas`).pipe(
       catchError(() => of([]))
     ).subscribe((areas) => {
-      const pId = this.userContextSignal()?.personaId;
       const leaderMatch = areas.some(a => a.lider?.id === pId);
       this.isLiderSignal.set(leaderMatch);
+    });
+
+    this.http.get<any[]>(`${this.apiUrl}/cursos/mis-fichas-lideradas/${pId}`).pipe(
+      catchError(() => of([]))
+    ).subscribe((fichas) => {
+      this.isLiderFichaSignal.set(fichas.length > 0);
     });
   }
 }

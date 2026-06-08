@@ -6,10 +6,17 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from '@angular/forms';
 import {
   LucideAngularModule,
-  Plus, X, Search, Pencil, Trash2, Download, Calendar, AlertCircle, User, Clock
+  Plus, X, Search, Pencil, Trash2, Download, Calendar, AlertCircle, User, Clock, LayoutGrid, List, Copy, Check
 } from 'lucide-angular';
 import { AdminCursosService } from '../../../core/services/admin-cursos.service';
 import { AdminHorariosService } from '../../../core/services/admin-horarios.service';
+
+interface MonthDay {
+  date: number;
+  fullDate: string;
+  isCurrentMonth: boolean;
+  events: any[];
+}
 
 @Component({
   selector: 'app-admin-cursos',
@@ -141,7 +148,24 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
               </div>
             </div>
             <div class="header-btns" style="display: flex; gap: 8px; align-items: center;">
-              <input type="date" [ngModel]="selectedDate()" (ngModelChange)="onDateChange($event)" class="field-input" style="width: auto; height: 32px; padding: 0 10px; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px;">
+              <!-- TOGGLE VISTA -->
+              <div class="view-toggle">
+                <button [class.active]="calendarViewMode() === 'weekly'" (click)="setCalendarViewMode('weekly')" title="Vista Semanal"><lucide-icon name="list" [size]="16"></lucide-icon> Semanal</button>
+                <button [class.active]="calendarViewMode() === 'monthly'" (click)="setCalendarViewMode('monthly')" title="Vista Mensual"><lucide-icon name="layout-grid" [size]="16"></lucide-icon> Mensual</button>
+              </div>
+
+              <!-- DATE NAVIGATOR -->
+              <div class="date-navigator">
+                <button class="nav-arrow" (click)="previousPeriod()"><lucide-icon name="chevron-left" [size]="16"></lucide-icon></button>
+                
+                <div class="period-display" style="position: relative;">
+                  <span class="period-label">{{ displayPeriod() }}</span>
+                  <input type="date" [ngModel]="selectedDate()" (ngModelChange)="onDateChange($event)" class="hidden-date-input" title="Elegir fecha">
+                </div>
+
+                <button class="nav-arrow" (click)="nextPeriod()"><lucide-icon name="chevron-right" [size]="16"></lucide-icon></button>
+              </div>
+
               @if (srv.horarioDelCurso()) {
                 <button class="btn-primary" (click)="openAddBlockModal()">
                   <lucide-icon name="plus" [size]="15"></lucide-icon> Añadir Bloque
@@ -180,67 +204,105 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
                 <p>Este curso aún no tiene horario asignado</p>
               </div>
             } @else {
-              <div class="schedule-wrapper">
-                <!-- Time column -->
-                <div class="time-col">
-                  <div class="time-col-header"></div>
-                  @for (h of hoursRuler; track h) {
-                    <div class="time-cell">{{ formatHour(h) }}</div>
-                  }
-                </div>
+              
+              @if (calendarViewMode() === 'weekly') {
+                <div class="schedule-wrapper">
+                  <!-- Time column -->
+                  <div class="time-col">
+                    <div class="time-col-header"></div>
+                    @for (h of hoursRuler; track h) {
+                      <div class="time-cell">{{ formatHour(h) }}</div>
+                    }
+                  </div>
 
-                <!-- Day columns -->
-                @for (day of days; track day) {
-                  <div class="day-col">
-                    <div class="day-header">{{ day }}</div>
-                    <div class="day-slots" [style.position]="'relative'" [style.height.px]="hoursRuler.length * 60">
-                      @for (evt of getEventsForDay(day); track $index) {
-                        <div
-                          class="event-block custom-tooltip-container"
-                          [class.transversal]="evt.es_transversal"
-                          [style.top.px]="evt.topPx"
-                          [style.height.px]="evt.heightPx">
-                          @if (evt.es_transversal) {
-                            <div class="event-tag">Transversal</div>
-                          }
-                          <div class="event-instructor">{{ getInstructorName(evt) }}</div>
-                          <div class="event-time">{{ evt.hora_inicio?.substring(0,5) }} - {{ evt.hora_fin?.substring(0,5) }}</div>
-                          @if (getBadge(evt, day); as badge) {
-                            <div class="sch-badge" 
-                                 [class.pendiente]="badge.type.toLowerCase() === 'pendiente'"
-                                 [class.activa]="badge.type.toLowerCase() === 'activa'"
-                                 [class.retraso]="badge.type.toLowerCase() === 'retraso'"
-                                 [class.finalizada]="badge.type.toLowerCase() === 'finalizada'"
-                                 [class.suspendida]="badge.type.toLowerCase() === 'suspendida'"
-                                 [class.no-asistio]="badge.type.toLowerCase() === 'no asistio'">
-                              {{ badge.text }}
-                            </div>
-                            @if (badge.type === 'Activa' || badge.type === 'Retraso') {
-                              <div class="progress-container">
-                                <div class="progress-bar" [style.width.%]="horariosSrv.getClassProgressForEvent(evt, day)"></div>
-                              </div>
+                  <!-- Day columns -->
+                  @for (day of days; track day) {
+                    <div class="day-col">
+                      <div class="day-header">{{ day }}</div>
+                      <div class="day-slots" [style.position]="'relative'" [style.height.px]="hoursRuler.length * 60">
+                        @for (evt of getEventsForDay(day); track $index) {
+                          <div
+                            class="event-block custom-tooltip-container"
+                            [class.transversal]="evt.es_transversal"
+                            [style.top.px]="evt.topPx"
+                            [style.height.px]="evt.heightPx"
+                            (click)="openEventDetails(evt)">
+                            @if (evt.es_transversal) {
+                              <div class="event-tag">Transversal</div>
                             }
-                          }
-
-                          <div class="custom-tooltip">
-                            <div class="tt-header">
-                              {{ getInstructorName(evt) }}
-                            </div>
-                            <div class="tt-body">
-                              <div><strong>Día:</strong> {{ day }} ({{ evt.hora_inicio?.substring(0,5) }} - {{ evt.hora_fin?.substring(0,5) }})</div>
-                              @if (evt.competencia) {
-                                <div style="margin-top: 8px;"><strong>Competencia:</strong><br/>{{ evt.competencia }}</div>
-                                <div style="margin-top: 4px;"><strong>Resultado:</strong><br/>{{ evt.resultado }}</div>
-                                <div style="margin-top: 4px; color: #EAB308;"><strong>{{ evt.fecha_inicio_competencia }} a {{ evt.fecha_fin_competencia }}</strong></div>
+                            <div class="event-instructor">{{ getInstructorName(evt) }}</div>
+                            <div class="event-time">{{ evt.hora_inicio?.substring(0,5) }} - {{ evt.hora_fin?.substring(0,5) }}</div>
+                            @if (getBadge(evt, day); as badge) {
+                              <div class="sch-badge" 
+                                   [class.pendiente]="badge.type.toLowerCase() === 'pendiente'"
+                                   [class.activa]="badge.type.toLowerCase() === 'activa'"
+                                   [class.retraso]="badge.type.toLowerCase() === 'retraso'"
+                                   [class.finalizada]="badge.type.toLowerCase() === 'finalizada'"
+                                   [class.suspendida]="badge.type.toLowerCase() === 'suspendida'"
+                                   [class.no-asistio]="badge.type.toLowerCase() === 'no asistio'">
+                                {{ badge.text }}
+                              </div>
+                              @if (badge.type === 'Activa' || badge.type === 'Retraso') {
+                                <div class="progress-container">
+                                  <div class="progress-bar" [style.width.%]="horariosSrv.getClassProgressForEvent(evt, day)"></div>
+                                </div>
                               }
+                            }
+
+                            <div class="custom-tooltip">
+                              <div class="tt-body" style="font-size: 13px; line-height: 1.5;">
+                                <div><strong>Instructor:</strong> {{ getInstructorName(evt) }}</div>
+                                <div><strong>Ambiente:</strong> {{ evt?.ambienteNombre || 'Sin asignar' }}</div>
+                                <div><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+                                <div style="margin-top: 6px;"><strong>Competencia:</strong><br/>{{ evt.competencia || 'N/A' }}</div>
+                                <div style="margin-top: 4px;"><strong>Resultado:</strong><br/>{{ evt.resultado || 'N/A' }}</div>
+                                <div style="margin-top: 6px;"><strong>Fecha de inicio:</strong> {{ (evt.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                                <div><strong>Fecha de fin:</strong> {{ (evt.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      }
+                        }
+                      </div>
                     </div>
+                  }
+                </div>
+              } @else {
+                <!-- VISTA MENSUAL -->
+                <div class="monthly-wrapper">
+                  <div class="month-header-grid">
+                    @for (dayName of weekDays; track dayName) {
+                      <div class="month-day-name">{{ dayName }}</div>
+                    }
                   </div>
-                }
-              </div>
+                  <div class="month-grid">
+                    @for (mDay of monthlyGrid(); track mDay.fullDate) {
+                      <div class="month-cell" [class.not-current-month]="!mDay.isCurrentMonth" [class.is-today]="mDay.fullDate === selectedDate()">
+                        <div class="month-cell-date">{{ mDay.date }}</div>
+                        <div class="month-cell-events">
+                          @for (evt of mDay.events; track $index) {
+                            <div class="month-event custom-tooltip-container" [class.transversal]="evt.es_transversal" (click)="openEventDetails(evt, mDay.fullDate)">
+                              <div class="mevt-time">{{ evt.hora_inicio?.substring(0,5) }}</div>
+                              <div class="mevt-title">{{ getInstructorName(evt) }}</div>
+                              
+                              <div class="custom-tooltip monthly-tooltip">
+                                <div class="tt-body" style="font-size: 13px; line-height: 1.5;">
+                                  <div><strong>Instructor:</strong> {{ getInstructorName(evt) }}</div>
+                                  <div><strong>Ambiente:</strong> {{ evt?.ambienteNombre || 'Sin asignar' }}</div>
+                                  <div><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+                                  <div style="margin-top: 6px;"><strong>Competencia:</strong><br/>{{ evt.competencia || 'N/A' }}</div>
+                                  <div style="margin-top: 4px;"><strong>Resultado:</strong><br/>{{ evt.resultado || 'N/A' }}</div>
+                                  <div style="margin-top: 6px;"><strong>Fecha de inicio:</strong> {{ (evt.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                                  <div><strong>Fecha de fin:</strong> {{ (evt.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             }
           </div>
 
@@ -473,6 +535,37 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
           <div class="error-alert">{{ submitError() }}</div>
         }
       </form>
+    </ng-template>
+
+    <!-- ─── Event Details Modal ────────────────── -->
+    <ng-template [ngIf]="showEventDetailsModal()">
+      <div class="modal-backdrop" (click)="closeEventDetailsModal()"></div>
+      <div class="modal-panel" style="max-width: 450px;">
+        <div class="modal-header">
+          <h2 class="modal-title">Detalles del Bloque</h2>
+          <button class="btn-icon" (click)="closeEventDetailsModal()"><lucide-icon name="x" [size]="20"></lucide-icon></button>
+        </div>
+        <div class="modal-body" style="padding: 24px; font-size: 14px; line-height: 1.6;">
+          <div id="event-details-content" style="background: #F9FAFB; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;">
+            <div style="margin-bottom: 8px;"><strong>Instructor:</strong> {{ getInstructorName(selectedEventDetails()?.evt) }}</div>
+            <div style="margin-bottom: 8px;"><strong>Ambiente:</strong> {{ selectedEventDetails()?.evt?.ambienteNombre || 'Sin asignar' }}</div>
+            <div style="margin-bottom: 8px;"><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+            <div style="margin-bottom: 8px;"><strong>Competencia:</strong> {{ selectedEventDetails()?.evt?.competencia || 'N/A' }}</div>
+            <div style="margin-bottom: 8px;"><strong>Resultado:</strong> {{ selectedEventDetails()?.evt?.resultado || 'N/A' }}</div>
+            <div style="margin-bottom: 8px;"><strong>Fecha de inicio:</strong> {{ (selectedEventDetails()?.evt?.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+            <div><strong>Fecha de fin:</strong> {{ (selectedEventDetails()?.evt?.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+          </div>
+          
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+            <button class="btn-outline" (click)="closeEventDetailsModal()">Cerrar</button>
+            <button class="btn-primary" (click)="copyEventDetails()">
+              <lucide-icon name="copy" [size]="16" *ngIf="!copied()"></lucide-icon>
+              <lucide-icon name="check" [size]="16" *ngIf="copied()"></lucide-icon>
+              {{ copied() ? 'Copiado!' : 'Copiar Información' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </ng-template>
   `,
   styles: [`
@@ -823,6 +916,91 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
     .confirm-body { padding: 20px 24px; }
     .confirm-body p { margin: 0 0 10px; font-size: 15px; color: var(--color-text, #111); }
     .confirm-sub { font-size: 13px; color: var(--color-text-muted); }
+
+    /* ─── Monthly Calendar View ────────────────── */
+    .date-navigator {
+      display: flex; align-items: center; background: #fff; border: 1px solid #E5E7EB;
+      border-radius: 8px; overflow: hidden; height: 32px;
+    }
+    .nav-arrow {
+      background: transparent; border: none; padding: 0 8px; height: 100%;
+      cursor: pointer; color: #6B7280; transition: background 0.15s, color 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-arrow:hover { background: #F3F4F6; color: #111; }
+    
+    .period-display {
+      padding: 0 12px; font-size: 13px; font-weight: 600; color: #374151;
+      display: flex; align-items: center; justify-content: center; min-width: 130px;
+      border-left: 1px solid #E5E7EB; border-right: 1px solid #E5E7EB;
+      cursor: pointer; position: relative; height: 100%;
+    }
+    .period-display:hover { background: #F9FAFB; }
+    
+    .hidden-date-input {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer;
+    }
+
+    .view-toggle {
+      display: flex; background: #F3F4F6; border-radius: 8px; padding: 4px; border: 1px solid #E5E7EB;
+    }
+    .view-toggle button {
+      background: transparent; border: none; padding: 6px 12px; border-radius: 6px;
+      font-size: 13px; font-weight: 500; color: #6B7280; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .view-toggle button:hover { color: #374151; }
+    .view-toggle button.active {
+      background: #fff; color: #1B5C3A; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600;
+    }
+
+    .monthly-wrapper {
+      display: flex; flex-direction: column; height: 100%; min-height: 500px;
+      border-top: 1px solid var(--color-border, #E5E7EB);
+    }
+    .month-header-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      background: #1B5C3A; color: #fff; text-align: center; font-size: 13px; font-weight: 600;
+      text-transform: uppercase; border-bottom: 1px solid var(--color-border, #E5E7EB);
+    }
+    .month-day-name { padding: 12px 0; }
+    .month-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(120px, auto);
+      flex: 1; background: #E5E7EB; gap: 1px;
+    }
+    .month-cell {
+      background: #fff; padding: 8px; display: flex; flex-direction: column; gap: 4px;
+      transition: background 0.15s; position: relative; z-index: 1;
+    }
+    .month-cell:hover { background: #F9FAFB; z-index: 10; }
+    .month-cell.not-current-month { background: #F9FAFB; }
+    .month-cell.not-current-month .month-cell-date { color: #D1D5DB; }
+    .month-cell.is-today .month-cell-date {
+      background: #2E7D52; color: #fff; border-radius: 50%; width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center; font-weight: 700;
+    }
+    .month-cell-date { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 4px; align-self: flex-end; }
+    
+    .month-cell-events { display: flex; flex-direction: column; gap: 4px; }
+    .month-event {
+      background: #E8F5EE; border-left: 3px solid #2E7D52; border-radius: 4px;
+      padding: 6px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: transform 0.1s; position: relative;
+    }
+    .month-event:hover { transform: scale(1.02); box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 20; }
+    .month-event.transversal { background: #EFF6FF; border-left-color: #3B82F6; }
+    .mevt-time { font-weight: 700; color: #1B5C3A; font-size: 11px; }
+    .month-event.transversal .mevt-time { color: #1E40AF; }
+    .mevt-title { color: #374151; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    
+    .monthly-tooltip { 
+      left: 50%; transform: translateX(-50%) translateY(10px); top: 100%; margin-top: 6px; 
+      z-index: 9999; width: 250px; white-space: normal; position: absolute;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .monthly-tooltip::before { top: -7px; left: 50%; transform: translateX(-50%); border-width: 0 7px 7px 7px; border-color: transparent transparent #111827 transparent; }
+    .custom-tooltip-container:hover .monthly-tooltip { transform: translateX(-50%) translateY(0); }
   `]
 })
 export class AdminCursosComponent implements OnInit {
@@ -842,6 +1020,125 @@ export class AdminCursosComponent implements OnInit {
   showEditModal     = signal(false);
   showDeleteModal   = signal(false);
   showAddBlockModal = signal(false);
+  showEventDetailsModal = signal(false);
+  selectedEventDetails = signal<any>(null);
+  copied = signal(false);
+
+  // ─── Event Details Modal Methods ──────────────────
+  openEventDetails(evt: any, dateStr?: string) {
+    this.selectedEventDetails.set({ evt, dateStr });
+    this.showEventDetailsModal.set(true);
+    this.copied.set(false);
+  }
+  closeEventDetailsModal() {
+    this.showEventDetailsModal.set(false);
+    this.selectedEventDetails.set(null);
+  }
+  copyEventDetails() {
+    const el = document.getElementById('event-details-content');
+    if (el) {
+      const text = el.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        this.copied.set(true);
+        setTimeout(() => this.copied.set(false), 2000);
+      });
+    }
+  }
+
+  // ─── Calendar View Mode ───────────────────────
+  calendarViewMode = signal<'weekly' | 'monthly'>('monthly');
+  
+  displayPeriod = computed(() => {
+    const d = new Date(this.selectedDate() + 'T00:00:00');
+    if (this.calendarViewMode() === 'monthly') {
+      const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      return `${months[d.getMonth()]} ${d.getFullYear()}`;
+    } else {
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - (d.getDay() || 7) + 1);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 5);
+      return `Semana: ${weekStart.getDate()}/${weekStart.getMonth()+1} - ${weekEnd.getDate()}/${weekEnd.getMonth()+1}`;
+    }
+  });
+
+  previousPeriod() {
+    const d = new Date(this.selectedDate() + 'T00:00:00');
+    if (this.calendarViewMode() === 'monthly') {
+      d.setMonth(d.getMonth() - 1);
+    } else {
+      d.setDate(d.getDate() - 7);
+    }
+    this.onDateChange(d.toISOString().substring(0, 10));
+  }
+
+  nextPeriod() {
+    const d = new Date(this.selectedDate() + 'T00:00:00');
+    if (this.calendarViewMode() === 'monthly') {
+      d.setMonth(d.getMonth() + 1);
+    } else {
+      d.setDate(d.getDate() + 7);
+    }
+    this.onDateChange(d.toISOString().substring(0, 10));
+  }
+  
+  monthlyGrid = computed(() => {
+    const dateStr = this.selectedDate();
+    const horario = this.srv.horarioDelCurso(); // Creates dependency
+
+    const baseDate = new Date(dateStr + 'T00:00:00');
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    
+    // First day of the month
+    const firstDay = new Date(year, month, 1);
+    const startingDayOfWeek = firstDay.getDay(); // 0 is Sunday
+    
+    // Total days in the month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const grid: MonthDay[] = [];
+    
+    // Previous month padding
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      const pDay = daysInPrevMonth - startingDayOfWeek + i + 1;
+      const prevDate = new Date(year, month - 1, pDay);
+      grid.push({
+        date: pDay,
+        fullDate: prevDate.toISOString().substring(0, 10),
+        isCurrentMonth: false,
+        events: this.getEventsForSpecificDate(prevDate, horario)
+      });
+    }
+    
+    // Current month days
+    for (let i = 1; i <= daysInMonth; i++) {
+      const curDate = new Date(year, month, i);
+      grid.push({
+        date: i,
+        fullDate: curDate.toISOString().substring(0, 10),
+        isCurrentMonth: true,
+        events: this.getEventsForSpecificDate(curDate, horario)
+      });
+    }
+    
+    // Next month padding
+    const remainingCells = 42 - grid.length;
+    for (let i = 1; i <= remainingCells; i++) {
+      const nextDate = new Date(year, month + 1, i);
+      grid.push({
+        date: i,
+        fullDate: nextDate.toISOString().substring(0, 10),
+        isCurrentMonth: false,
+        events: this.getEventsForSpecificDate(nextDate, horario)
+      });
+    }
+    
+    return grid;
+  });
+
+  weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   // ─── State ────────────────────────────────────
   selectedCurso   = signal<any>(null);
@@ -898,6 +1195,11 @@ export class AdminCursosComponent implements OnInit {
   onDateChange(dateStr: string) {
     this.selectedDate.set(dateStr);
     this.fetchRegistrosForWeek(dateStr);
+    
+    if (this.calendarViewMode() === 'weekly') {
+      this.horariosSrv.fetchRegistrosClasesSemana(dateStr);
+    }
+    
     this.cdr.detectChanges();
   }
 
@@ -1037,6 +1339,39 @@ Jornada: ${curso.jornada}`;
   }
   closeCalendarModal() { this.showCalendarModal.set(false); }
 
+  setCalendarViewMode(mode: 'weekly' | 'monthly') {
+    this.calendarViewMode.set(mode);
+  }
+
+  getEventsForSpecificDate(dateObj: Date, horario: any = null): any[] {
+    const dayOfWeek = dateObj.getDay(); // 0=Domingo, 1=Lunes, ...
+    const detalles = horario?.detalles ?? [];
+    const curso = this.selectedCurso();
+    
+    return detalles
+      .filter((d: any) => d.dia === dayOfWeek)
+      .filter((d: any) => {
+        // Obtenemos las fechas del bloque o usamos las del curso como respaldo
+        let startStr = d.fecha_inicio_competencia;
+        let endStr = d.fecha_fin_competencia;
+        
+        if (!startStr && curso?.fecha_inicio) startStr = curso.fecha_inicio;
+        if (!endStr && curso?.fin_lectiva) endStr = curso.fin_lectiva;
+        else if (!endStr && curso?.fecha_fin) endStr = curso.fecha_fin;
+
+        if (startStr && endStr) {
+          const start = new Date(startStr.substring(0, 10) + 'T00:00:00');
+          const end = new Date(endStr.substring(0, 10) + 'T23:59:59');
+          if (dateObj < start || dateObj > end) return false;
+        }
+        return true;
+      })
+      .map((d: any) => ({
+        ...d,
+        ambienteNombre: horario?.ambiente?.nombre || 'Sin asignar'
+      }))
+      .sort((a: any, b: any) => a.hora_inicio.localeCompare(b.hora_inicio));
+  }
   // ─── Add Block Modal ──────────────────────────
   openAddBlockModal() {
     this.horariosSrv.fetchInstructores();

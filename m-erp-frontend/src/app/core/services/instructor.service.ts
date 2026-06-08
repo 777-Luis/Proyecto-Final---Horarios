@@ -107,6 +107,38 @@ export class InstructorService {
     return this.http.patch<any>(`${this.apiHorariosUrl}/horarios/detalles/${detalleId}`, payload);
   }
 
+  fichasLideradas = signal<any[]>([]);
+
+  fetchFichasLideradas() {
+    const userId = this.authService.userContextSignal()?.personaId;
+    if (!userId) return;
+    this.http.get<any[]>(`${this.apiUrl}/cursos/mis-fichas-lideradas/${userId}`).subscribe({
+      next: (data) => this.fichasLideradas.set(data),
+      error: (err) => console.error('Error fetching fichas lideradas', err)
+    });
+  }
+
+  createHorarioBase(payload: any) {
+    return this.http.post<any>(`${this.apiHorariosUrl}/horarios`, payload);
+  }
+
+  addHorarioDetalle(horarioId: string, payload: any) {
+    return this.http.post<any>(`${this.apiHorariosUrl}/horarios/${horarioId}/detalles`, payload);
+  }
+
+  deleteHorarioDetalle(detalleId: string) {
+    return this.http.delete<any>(`${this.apiHorariosUrl}/horarios/detalles/${detalleId}`);
+  }
+
+  fetchHorarioCompleto(horarioId: string) {
+    return this.http.get<any>(`${this.apiHorariosUrl}/horarios/${horarioId}`);
+  }
+
+  fetchHorarioByCurso(cursoId: string) {
+    // Fetches all schedules and finds the one matching the course.
+    return this.http.get<any[]>(`${this.apiHorariosUrl}/horarios`);
+  }
+
   fetchSolicitudesEnviadas() {
     this.isLoadingRequests.set(true);
     this.http.get<any[]>(`${this.apiUrl}/solicitudes`).subscribe({

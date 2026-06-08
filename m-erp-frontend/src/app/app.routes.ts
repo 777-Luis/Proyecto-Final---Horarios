@@ -50,15 +50,17 @@ export const routes: Routes = [
           { path: 'solicitudes', loadComponent: () => import('./features/admin/solicitudes/solicitudes.component').then(m => m.AdminSolicitudesComponent) },
           { path: 'usuarios', loadComponent: () => import('./features/admin/users/users.component').then(m => m.AdminUsersComponent) },
           { path: 'planeacion', loadComponent: () => import('./features/admin/planeacion/planeacion.component').then(m => m.AdminPlaneacionComponent) }, 
-          { path: 'configuracion', loadComponent: () => import('./features/admin/config/config.component').then(m => m.ConfigComponent) }
+          { path: 'configuracion', loadComponent: () => import('./features/admin/config/config.component').then(m => m.ConfigComponent) },
+          { path: 'perfil', loadComponent: () => import('./shared/components/perfil/perfil.component').then(m => m.PerfilComponent) }
         ]
       },
       {
         path: 'instructor',
         canActivate: [roleGuard],
         data: { roles: ['Instructor'] },
-        children: [
+         children: [
            { path: 'mi-horario', loadComponent: () => import('./features/instructor/mi-horario/mi-horario.component').then(m => m.MiHorarioComponent) },
+           { path: 'fichas-lider', loadComponent: () => import('./features/instructor/fichas-lider/fichas-lider.component').then(m => m.FichasLiderComponent) },
            { path: 'solicitudes', loadComponent: () => import('./features/instructor/solicitudes/solicitudes.component').then(m => m.SolicitudesComponent) },
            { path: 'mis-solicitudes', loadComponent: () => import('./features/instructor/mis-solicitudes/mis-solicitudes.component').then(m => m.MisSolicitudesLiderComponent) },
            { path: 'perfil', loadComponent: () => import('./shared/components/perfil/perfil.component').then(m => m.PerfilComponent) },

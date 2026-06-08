@@ -31,11 +31,11 @@ export class HorariosController {
     return this.service.fetchAmbientesDisponibles(rawToken, jornada, ignoreCursoId);
   }
 
-  @Roles('Administrador')
+  @Roles('Administrador', 'Instructor')
   @Post()
   async createHorario(@Body() body: any, @Req() req: any) {
     const rawToken = req.headers.authorization; 
-    return this.service.create(body, rawToken);
+    return this.service.create(body, rawToken, req.user);
   }
 
   @Roles('Administrador', 'Instructor', 'Aprendiz')
@@ -70,21 +70,21 @@ export class HorariosController {
     return this.service.getHorario(id);
   }
 
-  @Roles('Administrador')
+  @Roles('Administrador', 'Instructor')
   @Post(':id/detalles')
-  async addDetalle(@Param('id') id: string, @Body() body: any) {
-    return this.service.addDetalle(id, body);
+  async addDetalle(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.service.addDetalle(id, body, req.user);
   }
 
   @Roles('Administrador', 'Instructor')
   @Patch('detalles/:id')
-  async updateDetalle(@Param('id') id: string, @Body() body: any) {
-    return this.service.updateDetalle(id, body);
+  async updateDetalle(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.service.updateDetalle(id, body, req.user);
   }
 
-  @Roles('Administrador')
+  @Roles('Administrador', 'Instructor')
   @Delete('detalles/:id')
-  async deleteDetalle(@Param('id') id: string) {
-    return this.service.deleteDetalle(id);
+  async deleteDetalle(@Param('id') id: string, @Req() req: any) {
+    return this.service.deleteDetalle(id, req.user);
   }
 }

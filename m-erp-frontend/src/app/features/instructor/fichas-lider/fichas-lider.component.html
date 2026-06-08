@@ -1,0 +1,333 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mis Fichas Lideradas</h1>
+      <p class="page-subtitle">Visualiza y gestiona el horario de las fichas en las que eres líder</p>
+    </div>
+  </div>
+
+  <!-- ─── Toolbar: Buscador ───────────────────── -->
+  <div class="toolbar" style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+    <div class="search-wrapper" style="flex: 1; min-width: 250px;">
+      <lucide-icon name="search" [size]="16" class="search-icon"></lucide-icon>
+      <input
+        type="text"
+        class="search-input"
+        id="input-buscar-curso"
+        [(ngModel)]="searchTerm"
+        placeholder="Buscar por ficha, programa o área...">
+    </div>
+  </div>
+
+  <!-- ─── Table ───────────────────────────────── -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr style="background: #1B5C3A; color: white;">
+            <th style="padding: 12px; text-align: left;">Ficha / Nivel</th>
+            <th style="padding: 12px; text-align: left;">Programa Formativo</th>
+            <th style="padding: 12px; text-align: left;">Área</th>
+            <th style="padding: 12px; text-align: center;">Jornada</th>
+            <th style="padding: 12px; text-align: center;">Vigencia</th>
+            <th style="padding: 12px; text-align: right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (curso of filteredCursos(); track curso.id) {
+            <tr style="border-bottom: 1px solid #E5E7EB; transition: background 0.2s;" onmouseover="this.style.background='#F9FAFB'" onmouseout="this.style.background='white'">
+              <td style="padding: 12px;">
+                <div style="color: #2E7D52; font-weight: 600; font-size: 15px;">Ficha {{ curso.id_curso }}</div>
+                <div style="color: #6B7280; font-size: 12px;">{{ curso.programa?.tipo_programa || 'Tecnólogo' }}</div>
+              </td>
+              
+              <td style="padding: 12px;">
+                <div style="font-weight: 500; color: #374151;">{{ curso.programa?.nombre || 'Sin programa' }}</div>
+              </td>
+              
+              <td style="padding: 12px;">
+                <div style="color: #374151; font-weight: 500;">{{ curso.area?.nombre || 'Sin área' }}</div>
+              </td>
+              
+              <td style="padding: 12px; text-align: center;">
+                <span class="badge sm" [class.manana]="curso.jornada === 'Mañana'" [class.tarde]="curso.jornada === 'Tarde'">{{ curso.jornada }}</span>
+              </td>
+
+              <td style="padding: 12px; text-align: center; color: #4B5563; font-size: 12px;">
+                <div title="Inicio"><span style="color:#2E7D52; font-weight: 500;">I:</span> {{ (curso.fecha_inicio | date:'dd/MM/yy':'UTC') || 'N/A' }}</div>
+                <div title="Fin Lectiva"><span style="color:#F59E0B; font-weight: 500;">L:</span> {{ (curso.fin_lectiva | date:'dd/MM/yy':'UTC') || 'N/A' }}</div>
+                <div title="Fin Total"><span style="color:#DC2626; font-weight: 500;">F:</span> {{ (curso.fecha_fin | date:'dd/MM/yy':'UTC') || 'N/A' }}</div>
+              </td>
+              
+              <td style="padding: 12px; text-align: right;">
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  <button class="action-btn" title="Gestionar Horario" (click)="openCalendarModal(curso)" style="background: #E8F5E9; color: #2E7D52; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    <lucide-icon name="calendar" [size]="14"></lucide-icon> Gestionar Horario
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          @if (filteredCursos().length === 0) {
+            <tr>
+              <td colspan="6" class="empty-state" style="padding: 20px; text-align: center; color: #6B7280;">No se encontraron fichas lideradas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <!-- Pagination -->
+    <div class="pagination-footer">
+      <span class="page-info">{{ filteredCursos().length }} resultado(s)</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL 1 — Vista Calendario del Curso
+══════════════════════════════════════════════ -->
+@if (showCalendarModal()) {
+  <div class="modal-overlay" (click)="closeCalendarModal()">
+    <div class="modal-container wide-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="cal-header-meta">
+          <lucide-icon name="calendar" [size]="20"></lucide-icon>
+          <div>
+            <h2 class="modal-title">Ficha {{ selectedCurso()?.id_curso }}</h2>
+            <p class="modal-subtitle">{{ selectedCurso()?.programa?.nombre || selectedCurso()?.area?.nombre }}</p>
+          </div>
+        </div>
+        <div class="header-btns" style="display: flex; gap: 8px; align-items: center;">
+          <!-- TOGGLE VISTA -->
+          <div class="view-toggle">
+            <button [class.active]="calendarViewMode() === 'weekly'" (click)="setCalendarViewMode('weekly')" title="Vista Semanal"><lucide-icon name="list" [size]="16"></lucide-icon> Semanal</button>
+            <button [class.active]="calendarViewMode() === 'monthly'" (click)="setCalendarViewMode('monthly')" title="Vista Mensual"><lucide-icon name="layout-grid" [size]="16"></lucide-icon> Mensual</button>
+          </div>
+
+          <!-- DATE NAVIGATOR -->
+          <div class="date-navigator">
+            <button class="nav-arrow" (click)="previousPeriod()"><lucide-icon name="chevron-left" [size]="16"></lucide-icon></button>
+            
+            <div class="period-display" style="position: relative;">
+              <span class="period-label">{{ displayPeriod() }}</span>
+              <input type="date" [ngModel]="selectedDate()" (ngModelChange)="onDateChange($event)" class="hidden-date-input" title="Elegir fecha">
+            </div>
+
+            <button class="nav-arrow" (click)="nextPeriod()"><lucide-icon name="chevron-right" [size]="16"></lucide-icon></button>
+          </div>
+
+          @if (horarioDelCurso()) {
+            <button class="btn-primary" (click)="openAddBlockModal()">
+              <lucide-icon name="plus" [size]="15"></lucide-icon> Añadir Bloque
+            </button>
+          }
+          <button class="modal-close" (click)="closeCalendarModal()">
+            <lucide-icon name="x" [size]="18"></lucide-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Info strip -->
+      <div class="info-strip">
+        <div class="info-chip"><span class="chip-label">Área</span><span>{{ selectedCurso()?.area?.nombre || 'N/A' }}</span></div>
+        <div class="info-chip"><span class="chip-label">Programa</span><span>{{ selectedCurso()?.programa?.nombre || 'N/A' }}</span></div>
+        <div class="info-chip"><span class="chip-label">Jornada</span>
+          <span class="badge sm" [class.manana]="selectedCurso()?.jornada === 'Mañana'" [class.tarde]="selectedCurso()?.jornada === 'Tarde'">
+            {{ selectedCurso()?.jornada }}
+          </span>
+        </div>
+        <div class="info-chip"><span class="chip-label">Nivel</span><span>{{ selectedCurso()?.programa?.tipo_programa || 'N/A' }}</span></div>
+        <div class="info-chip"><span class="chip-label">Ambiente</span><span>{{ horarioDelCurso()?.ambiente?.nombre || 'Sin asignar' }}</span></div>
+        <div class="info-chip"><span class="chip-label">Lectiva</span><span>{{ selectedCurso()?.fecha_inicio | date:'dd/MM/yy':'UTC' }} - {{ selectedCurso()?.fin_lectiva | date:'dd/MM/yy':'UTC' }}</span></div>
+      </div>
+
+      <!-- Calendar body -->
+      <div class="cal-body">
+        @if (isLoadingHorario()) {
+          <div class="loading-state">Cargando horario...</div>
+        } @else if (!horarioDelCurso()) {
+          <div class="no-schedule">
+            <lucide-icon name="alert-circle" [size]="32"></lucide-icon>
+            <p>Este curso aún no tiene horario asignado.</p>
+            <button class="btn-primary" (click)="createBaseHorario()">Crear Horario Base</button>
+          </div>
+        } @else {
+          
+          @if (calendarViewMode() === 'weekly') {
+            <div class="schedule-wrapper">
+              <!-- Time column -->
+              <div class="time-col">
+                <div class="time-col-header"></div>
+                @for (h of hoursRuler; track h) {
+                  <div class="time-cell">{{ formatHour(h) }}</div>
+                }
+              </div>
+
+              <!-- Day columns -->
+              @for (day of days; track day) {
+                <div class="day-col">
+                  <div class="day-header">{{ day }}</div>
+                  <div class="day-slots" [style.position]="'relative'" [style.height.px]="hoursRuler.length * 60">
+                    @for (evt of getEventsForDay(day); track $index) {
+                      <div
+                        class="event-block custom-tooltip-container"
+                        [class.transversal]="evt.es_transversal"
+                        [style.top.px]="evt.topPx"
+                        [style.height.px]="evt.heightPx"
+                        (click)="openEventDetails(evt)">
+                        @if (evt.es_transversal) {
+                          <div class="event-tag">Transversal</div>
+                        }
+                        <button class="btn-delete-block" (click)="deleteBlock(evt, $event)" title="Eliminar"><lucide-icon name="trash-2" [size]="12"></lucide-icon></button>
+                        <div class="event-instructor">{{ getInstructorName(evt) }}</div>
+                        <div class="event-time">{{ evt.hora_inicio?.substring(0,5) }} - {{ evt.hora_fin?.substring(0,5) }}</div>
+
+                        <div class="custom-tooltip">
+                          <div class="tt-body" style="font-size: 13px; line-height: 1.5;">
+                            <div><strong>Instructor:</strong> {{ getInstructorName(evt) }}</div>
+                            <div><strong>Ambiente:</strong> {{ evt?.ambienteNombre || 'Sin asignar' }}</div>
+                            <div><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+                            <div style="margin-top: 6px;"><strong>Competencia:</strong><br/>{{ evt.competencia || 'N/A' }}</div>
+                            <div style="margin-top: 4px;"><strong>Resultado:</strong><br/>{{ evt.resultado || 'N/A' }}</div>
+                            <div style="margin-top: 6px;"><strong>Fecha de inicio:</strong> {{ (evt.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                            <div><strong>Fecha de fin:</strong> {{ (evt.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <!-- VISTA MENSUAL -->
+            <div class="monthly-wrapper">
+              <div class="month-header-grid">
+                @for (dayName of weekDays; track dayName) {
+                  <div class="month-day-name">{{ dayName }}</div>
+                }
+              </div>
+              <div class="month-grid">
+                @for (mDay of monthlyGrid(); track mDay.fullDate) {
+                  <div class="month-cell" [class.not-current-month]="!mDay.isCurrentMonth" [class.is-today]="mDay.fullDate === selectedDate()">
+                    <div class="month-cell-date">{{ mDay.date }}</div>
+                    <div class="month-cell-events">
+                      @for (evt of mDay.events; track $index) {
+                        <div class="month-event custom-tooltip-container" [class.transversal]="evt.es_transversal" (click)="openEventDetails(evt, mDay.fullDate)">
+                          <div class="mevt-time">{{ evt.hora_inicio?.substring(0,5) }}</div>
+                          <div class="mevt-title">{{ getInstructorName(evt) }}</div>
+                          
+                          <div class="custom-tooltip monthly-tooltip">
+                            <div class="tt-body" style="font-size: 13px; line-height: 1.5;">
+                              <div><strong>Instructor:</strong> {{ getInstructorName(evt) }}</div>
+                              <div><strong>Ambiente:</strong> {{ evt?.ambienteNombre || 'Sin asignar' }}</div>
+                              <div><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+                              <div style="margin-top: 6px;"><strong>Competencia:</strong><br/>{{ evt.competencia || 'N/A' }}</div>
+                              <div style="margin-top: 4px;"><strong>Resultado:</strong><br/>{{ evt.resultado || 'N/A' }}</div>
+                              <div style="margin-top: 6px;"><strong>Fecha de inicio:</strong> {{ (evt.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                              <div><strong>Fecha de fin:</strong> {{ (evt.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════
+     MODAL 5 — Añadir Bloque a Horario Existente
+══════════════════════════════════════════════ -->
+@if (showAddBlockModal()) {
+  <div class="modal-overlay" (click)="closeAddBlockModal()">
+    <div class="modal-container form-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title"><lucide-icon name="plus" [size]="18"></lucide-icon> Añadir Bloque de Clase</h2>
+        <button class="modal-close" (click)="closeAddBlockModal()"><lucide-icon name="x" [size]="18"></lucide-icon></button>
+      </div>
+      <div class="modal-body-scroll">
+        <div class="advanced-form">
+          <div class="field-group">
+            <label class="field-label">Día de la semana</label>
+            <select [(ngModel)]="addBlockPayload.dia" class="field-input">
+              <option [value]="1">Lunes</option>
+              <option [value]="2">Martes</option>
+              <option [value]="3">Miércoles</option>
+              <option [value]="4">Jueves</option>
+              <option [value]="5">Viernes</option>
+              <option [value]="6">Sábado</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="field-group">
+              <label class="field-label">Hora Inicio</label>
+              <input type="time" [(ngModel)]="addBlockPayload.hora_inicio" class="field-input">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Hora Fin</label>
+              <input type="time" [(ngModel)]="addBlockPayload.hora_fin" class="field-input">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Instructor</label>
+            <select [(ngModel)]="addBlockPayload.instructor_id" class="field-input">
+              <option value="" disabled>Seleccione Instructor...</option>
+              @for (inst of horariosSrv.instructores(); track inst.id) {
+                <option [value]="inst.persona_id || inst.id">{{ inst.nombre || inst.persona?.nombre }} {{ inst.apellido || inst.persona?.apellido }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeAddBlockModal()">Cancelar</button>
+        <button class="btn-save" (click)="saveAddBlock()" [disabled]="savingBlock() || !addBlockPayload.instructor_id">
+          {{ savingBlock() ? 'Guardando...' : 'Añadir Bloque' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ─── Event Details Modal ────────────────── -->
+<ng-template [ngIf]="showEventDetailsModal()">
+  <div class="modal-backdrop" (click)="closeEventDetailsModal()"></div>
+  <div class="modal-panel" style="max-width: 450px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Detalles del Bloque</h2>
+      <button class="btn-icon" (click)="closeEventDetailsModal()"><lucide-icon name="x" [size]="20"></lucide-icon></button>
+    </div>
+    <div class="modal-body" style="padding: 24px; font-size: 14px; line-height: 1.6;">
+      <div id="event-details-content" style="background: #F9FAFB; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;">
+        <div style="margin-bottom: 8px;"><strong>Instructor:</strong> {{ getInstructorName(selectedEventDetails()?.evt) }}</div>
+        <div style="margin-bottom: 8px;"><strong>Ambiente:</strong> {{ selectedEventDetails()?.evt?.ambienteNombre || 'Sin asignar' }}</div>
+        <div style="margin-bottom: 8px;"><strong>Grupo:</strong> {{ selectedCurso()?.programa?.nombre || '' }} - {{ selectedCurso()?.id_curso }}</div>
+        <div style="margin-bottom: 8px;"><strong>Competencia:</strong> {{ selectedEventDetails()?.evt?.competencia || 'N/A' }}</div>
+        <div style="margin-bottom: 8px;"><strong>Resultado:</strong> {{ selectedEventDetails()?.evt?.resultado || 'N/A' }}</div>
+        <div style="margin-bottom: 8px;"><strong>Fecha de inicio:</strong> {{ (selectedEventDetails()?.evt?.fecha_inicio_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+        <div><strong>Fecha de fin:</strong> {{ (selectedEventDetails()?.evt?.fecha_fin_competencia | date:'dd-MM-yyyy':'UTC') || 'N/A' }}</div>
+      </div>
+      
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button class="btn-outline" (click)="closeEventDetailsModal()">Cerrar</button>
+        <button class="btn-primary" (click)="copyEventDetails()">
+          <lucide-icon name="copy" [size]="16" *ngIf="!copied()"></lucide-icon>
+          <lucide-icon name="check" [size]="16" *ngIf="copied()"></lucide-icon>
+          {{ copied() ? 'Copiado!' : 'Copiar Información' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-template>

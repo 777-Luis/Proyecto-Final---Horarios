@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
@@ -55,11 +55,16 @@ export class HorariosService {
 
   // ======= CORE DOMAIN LOGIC =======
 
-  async create(dto: any, token: string) {
+  async create(dto: any, token: string, user?: any) {
     // 1. Cross-API Validations (Isolated)
     const cursos = await this.fetchCursosDisponibles(token);
-    if (!cursos.find((c: any) => c.id === dto.curso_id)) {
+    const targetCurso = cursos.find((c: any) => c.id === dto.curso_id);
+    if (!targetCurso) {
       throw new ConflictException('El curso indicado no está disponible o ya posee un horario definitivo.');
+    }
+
+    if (user?.rol === 'Instructor' && targetCurso.lider?.id !== user.id) {
+      throw new UnauthorizedException('No tienes permisos para crear el horario de esta ficha.');
     }
 
     const ambientes = await this.fetchAmbientesDisponibles(token, dto.jornada, dto.curso_id);
@@ -260,9 +265,16 @@ export class HorariosService {
     });
   }
 
-  async addDetalle(horarioId: string, det: any) {
-    const horario = await this.horarioRepo.findOne({ where: { id: horarioId } });
+  async addDetalle(horarioId: string, det: any, user?: any) {
+    const horario = await this.horarioRepo.findOne({ 
+      where: { id: horarioId },
+      relations: ['curso', 'curso.lider']
+    });
     if (!horario) throw new NotFoundException('Horario no encontrado');
+
+    if (user?.rol === 'Instructor' && horario.curso?.lider?.id !== user.id) {
+      throw new UnauthorizedException('No tienes permisos para modificar el horario de esta ficha.');
+    }
 
     if (det.es_transversal) {
       if (!det.hora_inicio.startsWith('08:00') || !det.hora_fin.startsWith('12:00')) {
@@ -297,12 +309,16 @@ export class HorariosService {
     return this.detalleRepo.save(detalle);
   }
 
-  async updateDetalle(id: string, payload: any) {
+  async updateDetalle(id: string, payload: any, user?: any) {
     const detalle = await this.detalleRepo.findOne({ 
       where: { id },
-      relations: ['horario', 'instructor'] 
+      relations: ['horario', 'instructor', 'horario.curso', 'horario.curso.lider'] 
     });
     if (!detalle) throw new NotFoundException('Detalle no encontrado');
+
+    if (user?.rol === 'Instructor' && detalle.horario.curso?.lider?.id !== user.id) {
+      throw new UnauthorizedException('No tienes permisos para modificar el horario de esta ficha.');
+    }
 
     // Mapear campos de detalles_propuestos
     const nuevoInstructorId = payload.instructor_propuesto_id || payload.instructor_id;
@@ -352,9 +368,16 @@ export class HorariosService {
     return detalle;
   }
 
-  async deleteDetalle(id: string) {
-    const detalle = await this.detalleRepo.findOne({ where: { id } });
+  async deleteDetalle(id: string, user?: any) {
+    const detalle = await this.detalleRepo.findOne({ 
+      where: { id },
+      relations: ['horario', 'horario.curso', 'horario.curso.lider']
+    });
     if (!detalle) throw new NotFoundException('Detalle no encontrado');
+
+    if (user?.rol === 'Instructor' && detalle.horario.curso?.lider?.id !== user.id) {
+      throw new UnauthorizedException('No tienes permisos para modificar el horario de esta ficha.');
+    }
 
     await this.detalleRepo.remove(detalle);
     return { success: true };

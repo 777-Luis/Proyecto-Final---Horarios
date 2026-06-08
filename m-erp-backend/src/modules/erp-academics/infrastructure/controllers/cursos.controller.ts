@@ -15,6 +15,12 @@ export class CursosController {
     return this.cursosService.findSinHorario();
   }
 
+  @Roles('Instructor')
+  @Get('mis-fichas-lideradas/:liderId')
+  async findMisFichasLideradas(@Param('liderId') liderId: string) {
+    return this.cursosService.findMisFichasLideradas(liderId);
+  }
+
   @Roles('Administrador', 'Instructor', 'Aprendiz')
   @Get()
   async findAll(@Query('area') area?: string, @Query('programa') programa?: string) {

@@ -231,14 +231,28 @@ export class SidebarComponent implements OnInit, OnChanges {
         { path: '/admin/usuarios', icon: 'users', label: 'Usuarios' },
         { path: '/admin/planeacion', icon: 'gantt-chart-square', label: 'Planeación' },
         { path: '/admin/configuracion', icon: 'settings', label: 'Configuración' },
+        { path: '/admin/perfil', icon: 'user-circle', label: 'Mi Perfil' },
       ];
       } else if (role === 'Instructor') {
+        const isLiderArea = this.authService.isLeader();
+        const isLiderFicha = this.authService.isLeaderFicha();
+
         links = [
           { path: '/instructor/mi-horario', icon: 'calendar-check', label: 'Mi Horario' },
           { path: '/instructor/perfil', icon: 'user-circle', label: 'Mi Perfil' },
         ];
-        if (isLider) {
-          links.splice(1, 0, { path: '/instructor/mis-solicitudes', icon: 'clipboard-list', label: 'Gestión de Solicitudes' });
+        
+        let insertIdx = 1;
+        
+        if (isLiderFicha) {
+          links.splice(insertIdx, 0, { path: '/instructor/fichas-lider', icon: 'users', label: 'Fichas Lideradas' });
+          insertIdx++;
+        }
+
+        if (isLiderArea) {
+          links.splice(insertIdx, 0, { path: '/instructor/solicitudes', icon: 'message-square', label: 'Crear Solicitud' });
+          insertIdx++;
+          links.splice(insertIdx, 0, { path: '/instructor/mis-solicitudes', icon: 'clipboard-list', label: 'Gestión de Solicitudes' });
         }
     } else if (role === 'Aprendiz') {
       links = [

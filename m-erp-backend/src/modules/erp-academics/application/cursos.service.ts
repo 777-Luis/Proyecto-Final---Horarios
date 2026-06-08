@@ -34,11 +34,22 @@ export class CursosService {
     return curso;
   }
 
+  async findMisFichasLideradas(liderId: string) {
+    return this.cursoRepo.createQueryBuilder('c')
+      .leftJoinAndSelect('c.area', 'area')
+      .leftJoinAndSelect('c.programa', 'programa')
+      .leftJoinAndSelect('c.ambiente', 'ambiente')
+      .leftJoinAndSelect('c.lider', 'lider')
+      .where('lider.id = :liderId', { liderId })
+      .getMany();
+  }
+
   async findSinHorario() {
     return this.cursoRepo.createQueryBuilder('c')
       .leftJoinAndSelect('c.area', 'area')
       .leftJoinAndSelect('c.programa', 'programa')
       .leftJoinAndSelect('c.ambiente', 'ambiente')
+      .leftJoinAndSelect('c.lider', 'lider')
       .leftJoin(Horario, 'h', 'h.curso_id = c.id')
       .where('h.id IS NULL')
       .getMany();
