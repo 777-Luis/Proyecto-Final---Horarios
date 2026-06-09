@@ -33,7 +33,10 @@ import { AuthService } from '../../../core/auth/auth.service';
          <div class="schedule-grid">
             @for (day of days; track day; let i = $index) {
               <div class="grid-header" [style.grid-column]="i + 1" [style.grid-row]="1">
-                {{ day }}
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; gap: 2px;">
+                  <span>{{ day }}</span>
+                  <span style="font-weight: 400; opacity: 0.9; font-size: 11px; text-transform: none;">{{ getFormattedDateForDay(day) }}</span>
+                </div>
               </div>
             }
 
@@ -207,5 +210,30 @@ export class MiHorarioAprendizComponent implements OnInit {
     alert('Función de generador PDF de Ficha implementable con el Backend.');
   }
   
+  getDatesOfWeek(): string[] {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const d = new Date(todayStr + 'T00:00:00');
+    const day = d.getDay() || 7; 
+    const result: string[] = [];
+    for (let i = 1; i <= 6; i++) {
+      const copy = new Date(d);
+      copy.setDate(d.getDate() - day + i);
+      result.push(`${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`);
+    }
+    return result;
+  }
+
+  getFormattedDateForDay(day: string): string {
+    const dates = this.getDatesOfWeek();
+    const idx = this.days.indexOf(day);
+    if (idx < 0) return '';
+    const parts = dates[idx].split('-');
+    return `${parts[2]}/${parts[1]}`;
+  }
+
   formatHour(h: number) { return `${h.toString().padStart(2, '0')}:00`; }
 }

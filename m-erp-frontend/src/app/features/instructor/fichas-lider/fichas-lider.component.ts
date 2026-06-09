@@ -33,7 +33,11 @@ export class FichasLiderComponent implements OnInit {
 
   // ─── Search ───────────────────────────────────
   searchTerm = '';
-  selectedDate = signal(new Date().toISOString().substring(0, 10));
+  getLocalIsoStr(d: Date = new Date()): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  selectedDate = signal(this.getLocalIsoStr());
 
   // ─── Modal Flags ──────────────────────────────
   showCalendarModal = signal(false);
@@ -162,7 +166,7 @@ export class FichasLiderComponent implements OnInit {
     } else {
       d.setDate(d.getDate() - 7);
     }
-    this.onDateChange(d.toISOString().substring(0, 10));
+    this.onDateChange(this.getLocalIsoStr(d));
   }
 
   nextPeriod() {
@@ -172,7 +176,7 @@ export class FichasLiderComponent implements OnInit {
     } else {
       d.setDate(d.getDate() + 7);
     }
-    this.onDateChange(d.toISOString().substring(0, 10));
+    this.onDateChange(this.getLocalIsoStr(d));
   }
   
   monthlyGrid = computed(() => {
@@ -194,7 +198,7 @@ export class FichasLiderComponent implements OnInit {
       const prevDate = new Date(year, month - 1, pDay);
       grid.push({
         date: pDay,
-        fullDate: prevDate.toISOString().substring(0, 10),
+        fullDate: this.getLocalIsoStr(prevDate),
         isCurrentMonth: false,
         events: this.getEventsForSpecificDate(prevDate, horario)
       });
@@ -204,7 +208,7 @@ export class FichasLiderComponent implements OnInit {
       const curDate = new Date(year, month, i);
       grid.push({
         date: i,
-        fullDate: curDate.toISOString().substring(0, 10),
+        fullDate: this.getLocalIsoStr(curDate),
         isCurrentMonth: true,
         events: this.getEventsForSpecificDate(curDate, horario)
       });
@@ -215,7 +219,7 @@ export class FichasLiderComponent implements OnInit {
       const nextDate = new Date(year, month + 1, i);
       grid.push({
         date: i,
-        fullDate: nextDate.toISOString().substring(0, 10),
+        fullDate: this.getLocalIsoStr(nextDate),
         isCurrentMonth: false,
         events: this.getEventsForSpecificDate(nextDate, horario)
       });
@@ -296,6 +300,27 @@ export class FichasLiderComponent implements OnInit {
     if (!evt.instructor) return 'Sin instructor';
     const p = evt.instructor;
     return `${p.nombre || ''} ${p.apellido || ''}`.trim() || 'Sin instructor';
+  }
+
+  getDatesOfWeek(): string[] {
+    const todayStr = this.selectedDate() || this.getLocalIsoStr();
+    const d = new Date(todayStr + 'T00:00:00');
+    const day = d.getDay() || 7; 
+    const result: string[] = [];
+    for (let i = 1; i <= 6; i++) {
+      const copy = new Date(d);
+      copy.setDate(d.getDate() - day + i);
+      result.push(this.getLocalIsoStr(copy));
+    }
+    return result;
+  }
+
+  getFormattedDateForDay(day: string): string {
+    const dates = this.getDatesOfWeek();
+    const idx = this.days.indexOf(day);
+    if (idx < 0) return '';
+    const parts = dates[idx].split('-');
+    return `${parts[2]}/${parts[1]}`;
   }
 
   getEventsForDay(day: string): any[] {

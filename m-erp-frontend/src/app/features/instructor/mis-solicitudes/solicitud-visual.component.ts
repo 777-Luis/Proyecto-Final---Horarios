@@ -49,9 +49,12 @@ import { FormsModule } from '@angular/forms';
                  <thead>
                    <tr>
                      @for (day of days; track day) {
-                       <th [style.background]="'#1B5C3A'" style="color: white; text-align: center; width: 16.66%;">
-                         {{ day }}
-                       </th>
+                      <th [style.background]="'#1B5C3A'" style="color: white; text-align: center; width: 16.66%;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; gap: 2px;">
+                          <span>{{ day }}</span>
+                          <span style="font-weight: 400; opacity: 0.9; font-size: 11px; text-transform: none;">{{ getFormattedDateForDay(day) }}</span>
+                        </div>
+                      </th>
                      }
                    </tr>
                  </thead>
@@ -310,6 +313,27 @@ export class SolicitudVisualComponent {
         this.isLoading.set(false);
       }
     });
+  }
+
+  getDatesOfWeek(): string[] {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const d = new Date(todayStr + 'T00:00:00');
+    const day = d.getDay() || 7; 
+    const result: string[] = [];
+    for (let i = 1; i <= 6; i++) {
+      const copy = new Date(d);
+      copy.setDate(d.getDate() - day + i);
+      result.push(copy.toISOString().substring(0, 10));
+    }
+    return result;
+  }
+
+  getFormattedDateForDay(day: string): string {
+    const dates = this.getDatesOfWeek();
+    const idx = this.days.indexOf(day);
+    if (idx < 0) return '';
+    const parts = dates[idx].split('-');
+    return `${parts[2]}/${parts[1]}`;
   }
 
   getEventsForDay(dayName: string): any[] {

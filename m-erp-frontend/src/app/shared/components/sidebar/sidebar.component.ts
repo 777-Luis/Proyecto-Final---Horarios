@@ -108,6 +108,11 @@ import { AuthService } from '../../../core/auth/auth.service';
       gap: 4px;
       padding: 16px 0;
       overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none; /* Firefox */
+    }
+    .nav-links::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Edge */
     }
 
     .nav-item {

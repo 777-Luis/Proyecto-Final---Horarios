@@ -65,7 +65,12 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
                 <tr>
                   <th class="header-ambiente" style="min-width: 220px;">Ambiente / Área</th>
                   @for (day of days; track day) {
-                    <th [style.background]="day === getDayName(selectedDate()) ? '#2E7D52' : '#1B5C3A'" style="color: white; text-align: center;">{{ day }}</th>
+                    <th [style.background]="day === getDayName(selectedDate()) ? '#2E7D52' : '#1B5C3A'" style="color: white; text-align: center;">
+                      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; gap: 2px;">
+                        <span>{{ day }}</span>
+                        <span style="font-weight: 400; opacity: 0.9; font-size: 11px; text-transform: none;">{{ getFormattedDateForDay(day) }}</span>
+                      </div>
+                    </th>
                   }
                 </tr>
               </thead>
@@ -73,10 +78,10 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
                 @for (amb of filteredAmbientes(); track amb.id) {
                   <tr>
                     <!-- Columna 1: Ambiente + Info -->
-                    <td class="col-ambiente" style="vertical-align: top;">
+                    <td class="col-ambiente" style="vertical-align: top; padding: 0;">
                       <div class="ambiente-content">
-                        <div class="amb-nombre" style="color: #2E7D52; font-weight: 600; font-size: 15px;">{{ amb.nombre }}</div>
-                        <div class="amb-area" style="color: #6B7280; font-size: 13px;">{{ getAreaName(amb.area) }}</div>
+                        <div class="amb-nombre" style="color: #1B5C3A; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">{{ amb.nombre }}</div>
+                        <div class="amb-area" style="color: #6B7280; font-size: 13px; margin-top: 2px;">{{ getAreaName(amb.area) }}</div>
                         <div class="amb-capa" style="color: #9CA3AF; font-size: 12px; margin-top: 4px;">Capacidad: {{ amb.capacidad }} personas</div>
                       </div>
                     </td>
@@ -229,8 +234,17 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
     .header-ambiente { text-align: left !important; }
     tbody tr { background: #fff; border-bottom: 1px solid var(--color-border); }
     td { border: 1px solid var(--color-border); vertical-align: top; }
-    .col-ambiente { width: 220px; min-width: 220px; background: #F9FAFB; padding: 12px; }
-    .ambiente-content { display: flex; flex-direction: column; gap: 2px; }
+    .col-ambiente { position: sticky; left: 0; background: #F9FAFB; z-index: 5; border-right: 2px solid var(--color-border); width: 220px; min-width: 220px; }
+    .ambiente-content { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 2px; 
+      height: 100%;
+      min-height: 80px;
+      padding: 12px 16px;
+      border-left: 4px solid #1B5C3A;
+      background: linear-gradient(90deg, #F0FDF4 0%, #FFFFFF 100%);
+    }
     .col-day { min-width: 180px; width: calc((100% - 220px) / 6); background: #fff; }
 
     .schedule-card { background: #E8F5EE; border-left: 3px solid #2E7D52; color: #1B5C3A; transition: transform 0.15s, box-shadow 0.15s; }
@@ -329,7 +343,10 @@ export class AdminAmbientesComponent implements OnInit {
   
   searchTerm = '';
   jornadaFilter = signal('Todas');
-  selectedDate = signal(new Date().toISOString().substring(0, 10));
+  selectedDate = signal((() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })());
   verificandoDisponibilidad = signal(false);
 
   showModal = signal(false);
@@ -392,7 +409,7 @@ export class AdminAmbientesComponent implements OnInit {
     for (let i = 1; i <= 6; i++) {
       const copy = new Date(d);
       copy.setDate(d.getDate() - day + i);
-      result.push(copy.toISOString().substring(0, 10));
+      result.push(`${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`);
     }
     return result;
   }
@@ -400,6 +417,14 @@ export class AdminAmbientesComponent implements OnInit {
   getDayName(dateStr: string) {
     const d = new Date(dateStr + 'T00:00:00');
     return this.days[(d.getDay() || 7) - 1] || '';
+  }
+
+  getFormattedDateForDay(day: string): string {
+    const dates = this.getWeekDates(this.selectedDate());
+    const idx = this.days.indexOf(day);
+    if (idx < 0) return '';
+    const parts = dates[idx].split('-');
+    return `${parts[2]}/${parts[1]}`;
   }
 
   getEventsForAmbienteAndDay(ambienteId: string, day: string): any[] {
@@ -458,7 +483,10 @@ export class AdminAmbientesComponent implements OnInit {
     const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
 
     if (!registro) {
-      const currentToday = new Date().toISOString().substring(0,10);
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const currentToday = `${yyyy}-${mm}-${dd}`;
       const evtTimeStart = new Date(eventDate + 'T' + evt.hora_inicio);
       const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
 

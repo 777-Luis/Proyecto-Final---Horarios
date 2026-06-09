@@ -36,11 +36,13 @@ import { FormsModule } from '@angular/forms';
            <table>
              <thead>
                <tr>
-                 @for (day of days; track day) {
-                   <th [style.background]="day === currentDayName() ? '#2E7D52' : '#1B5C3A'" style="color: white; text-align: center; width: 16.66%;">
-                     {{ day }} <br>
-                     <small style="font-weight: 400; opacity: 0.9;">{{ getFormattedDateForDay(day) }}</small>
-                   </th>
+                 @for (day of days; track day; let i = $index) {
+                    <th [style.background]="day === currentDayName() ? '#2E7D52' : '#1B5C3A'" style="color: white; text-align: center; width: 16.66%;">
+                      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; gap: 2px;">
+                        <span>{{ day }}</span>
+                        <span style="font-weight: 400; opacity: 0.9; font-size: 11px; text-transform: none;">{{ getFormattedDateForDay(day) }}</span>
+                      </div>
+                    </th>
                  }
                </tr>
              </thead>
@@ -316,7 +318,13 @@ export class MiHorarioComponent implements OnInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);
   
   days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  todayDateStr = signal(new Date().toISOString().substring(0, 10));
+  todayDateStr = signal((() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  })());
   
   toastMessage = signal('');
   isActivating = signal(false);
@@ -329,7 +337,11 @@ export class MiHorarioComponent implements OnInit, OnDestroy {
     // Polling every 30s
     this.pollingInterval = setInterval(() => {
       this.fetchTodayRegistros();
-      this.todayDateStr.set(new Date().toISOString().substring(0, 10));
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      this.todayDateStr.set(`${yyyy}-${mm}-${dd}`);
       this.cdr.detectChanges();
     }, 30000);
   }

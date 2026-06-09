@@ -29,13 +29,14 @@ import { AdminUsersService } from '../../../core/services/admin-users.service';
          <div class="layout-grid">
            <!-- Side info (Read Only) -->
            <div class="glass-card profile-sidebar">
-              <div class="avatar-section">
+               <div class="avatar-section">
                  <div class="avatar-wrapper">
                     <lucide-icon name="user" [size]="56" color="#ffffff"></lucide-icon>
                  </div>
+                 <h2 class="user-name">{{ rParams().nombre || 'Usuario Actual' }}</h2>
                  <h3 class="user-role">{{ rParams().rol || 'Instructor' }}</h3>
-                 <span class="badge active">{{ rParams().estado || 'Activo' }}</span>
-              </div>
+                 <span class="badge active">{{ rParams().estado === true || rParams().estado === 'true' ? 'Activo' : (rParams().estado || 'Activo') }}</span>
+               </div>
               
               <div class="divider"></div>
               
@@ -159,11 +160,12 @@ import { AdminUsersService } from '../../../core/services/admin-users.service';
     .profile-header-banner {
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       border-radius: var(--radius-xl);
-      padding: 40px;
+      padding: 40px 40px 100px 40px; /* Extra padding bottom for overlap */
       color: white;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       position: relative;
       overflow: hidden;
+      margin-bottom: -60px; /* Pulls content up */
     }
     
     .profile-header-banner::after {
@@ -183,17 +185,18 @@ import { AdminUsersService } from '../../../core/services/admin-users.service';
     .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,0,0,0.1); border-top-color: var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .layout-grid { display: grid; grid-template-columns: 300px 1fr; gap: 30px; align-items: start; }
+    .layout-grid { display: grid; grid-template-columns: 340px 1fr; gap: 30px; align-items: start; position: relative; z-index: 10; padding: 0 20px; }
     
     /* Glass Cards */
-    .glass-card { background: var(--color-white); border-radius: var(--radius-xl); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; transition: box-shadow 0.3s ease; }
-    .glass-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+    .glass-card { background: var(--color-white); border-radius: var(--radius-xl); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 12px 30px rgba(0,0,0,0.06); overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .glass-card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,0.08); }
     
     /* Sidebar */
-    .profile-sidebar { padding: 32px 24px; text-align: center; }
-    .avatar-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .avatar-wrapper { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border: 4px solid white; }
-    .user-role { margin: 8px 0 0 0; font-size: 18px; color: var(--color-text); font-weight: 600; }
+    .profile-sidebar { padding: 40px 32px; text-align: center; }
+    .avatar-section { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .avatar-wrapper { width: 110px; height: 110px; border-radius: 50%; background: linear-gradient(135deg, #34D399 0%, var(--color-primary) 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 24px rgba(16,185,129,0.25); border: 5px solid white; margin-bottom: 12px; }
+    .user-name { margin: 0; font-size: 22px; color: var(--color-text); font-weight: 700; letter-spacing: -0.5px; }
+    .user-role { margin: 0 0 4px 0; font-size: 15px; color: var(--color-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
     
     .badge.active { background: #ECFDF5; color: #059669; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; border: 1px solid #A7F3D0; }
     

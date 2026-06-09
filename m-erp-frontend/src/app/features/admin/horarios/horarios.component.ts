@@ -53,15 +53,22 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
                   <tr>
                     <th class="sticky-col">Instructor</th>
                     @for (day of days; track day) {
-                      <th [class.current-day]="isCurrentDay(day)">{{ day }}</th>
+                      <th [class.current-day]="isCurrentDay(day)">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; gap: 2px;">
+                          <span>{{ day }}</span>
+                          <span style="font-weight: 400; opacity: 0.9; font-size: 11px; text-transform: none;">{{ getFormattedDateForDay(day) }}</span>
+                        </div>
+                      </th>
                     }
                   </tr>
                 </thead>
                 <tbody>
                   @for (row of filteredMatrix(); track row.instructorId) {
                     <tr>
-                      <td class="sticky-col instructor-cell">
-                        <div class="instructor-name">{{ row.instructorName }}</div>
+                      <td class="sticky-col instructor-cell" style="padding: 0;">
+                        <div class="instructor-cell-content">
+                          <div class="instructor-name">{{ row.instructorName }}</div>
+                        </div>
                       </td>
                       @for (day of days; track day) {
                         <td [class.empty-cell]="row.days[day].length === 0">
@@ -412,14 +419,21 @@ import { AdminHorariosService } from '../../../core/services/admin-horarios.serv
     }
     .instructor-cell {
       min-width: 200px;
+    }
+    .instructor-cell-content {
       display: flex;
       align-items: center;
       height: 100%;
+      min-height: 80px;
+      padding: 12px 16px;
+      border-left: 4px solid #1B5C3A;
+      background: linear-gradient(90deg, #F0FDF4 0%, #FFFFFF 100%);
     }
     .instructor-name {
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--color-text);
+      font-weight: 700;
+      font-size: 14px;
+      color: #1B5C3A;
+      letter-spacing: 0.3px;
     }
     .empty-cell {
       background: var(--color-white);
@@ -652,7 +666,10 @@ export class AdminHorariosComponent implements OnInit {
   
   searchQuery = '';
   jornadaFilter = 'Todas';
-  selectedDate = new Date().toISOString().split('T')[0];
+  selectedDate = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  })();
   
   rawMatrix = signal<any[]>([]);
   filteredMatrix = signal<any[]>([]);
@@ -702,6 +719,31 @@ export class AdminHorariosComponent implements OnInit {
 
   onDateChange() {
     this.fetchData();
+  }
+
+  getDatesOfWeek(): string[] {
+    const todayStr = this.selectedDate || (() => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    })();
+    const d = new Date(todayStr + 'T00:00:00');
+    const day = d.getDay() || 7; 
+    const result: string[] = [];
+    for (let i = 1; i <= 6; i++) {
+      const copy = new Date(d);
+      copy.setDate(d.getDate() - day + i);
+      result.push(`${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`);
+    }
+    return result;
+  }
+
+  getFormattedDateForDay(day: string): string {
+    const dates = this.getDatesOfWeek();
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const idx = days.indexOf(day);
+    if (idx < 0) return '';
+    const parts = dates[idx].split('-');
+    return `${parts[2]}/${parts[1]}`;
   }
 
   fetchData() {
@@ -775,16 +817,15 @@ export class AdminHorariosComponent implements OnInit {
     const targetDay = detalle.dia || 7;
     const copy = new Date(dDate);
     copy.setDate(dDate.getDate() - day + targetDay);
-    const eventDate = copy.toISOString().substring(0, 10);
+    const eventDate = `${copy.getFullYear()}-${String(copy.getMonth() + 1).padStart(2, '0')}-${String(copy.getDate()).padStart(2, '0')}`;
 
     const reg = registros.find(r => (r.horario_detalle_id === detalle.id || r.horario_detalle?.id === detalle.id) && r.fecha?.startsWith(eventDate));
     const now = new Date();
     const evtTimeEnd = new Date(eventDate + 'T' + detalle.hora_fin);
     
     const getProg = () => {
-       const now = new Date();
        const start = new Date(eventDate + 'T' + detalle.hora_inicio).getTime();
-       const end = new Date(eventDate + 'T' + detalle.hora_fin).getTime();
+       const end = evtTimeEnd.getTime();
        const nowTime = now.getTime();
        if (nowTime < start) return 0;
        if (nowTime > end) return 100;
@@ -792,22 +833,20 @@ export class AdminHorariosComponent implements OnInit {
     };
 
     if (!reg) {
-       // Check auto delay (if time has passed)
-       const now = new Date();
-       const currentToday = new Date().toISOString().split('T')[0];
+       const yyyy = now.getFullYear();
+       const mm = String(now.getMonth() + 1).padStart(2, '0');
+       const dd = String(now.getDate()).padStart(2, '0');
+       const currentToday = `${yyyy}-${mm}-${dd}`;
+       
+       const evtTimeStart = new Date(eventDate + 'T' + detalle.hora_inicio);
        
        if (eventDate < currentToday) {
          return { text: 'No asistió', cssClass: 'badge-no-asistio' };
        }
        if (eventDate === currentToday) {
-         const currentMinutes = now.getHours() * 60 + now.getMinutes();
-         const [hStr, mStr] = detalle.hora_inicio.split(':');
-         const startMinutes = parseInt(hStr) * 60 + parseInt(mStr);
-         const endMinutes = parseInt(detalle.hora_fin.split(':')[0]) * 60 + parseInt(detalle.hora_fin.split(':')[1]);
-         
-         if (currentMinutes > endMinutes) {
+         if (now > evtTimeEnd) {
             return { text: 'No asistió', cssClass: 'badge-no-asistio' };
-         } else if (currentMinutes > startMinutes) {
+         } else if (now > evtTimeStart) {
             return { text: 'Retraso Automático', cssClass: 'badge-retraso' };
          }
        }
@@ -847,7 +886,12 @@ export class AdminHorariosComponent implements OnInit {
     // User requested "El día actual resaltado con fondo #2E7D52". Means today's weekday.
     const todayStr = new Date(this.selectedDate).getDay(); // Note: parsing string is UTC, might be off by timezone. We just check JS getDay for strictly today?
     const realToday = new Date().getDay();
-    if (this.selectedDate === new Date().toISOString().split('T')[0]) {
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const localTodayStr = `${yyyy}-${mm}-${dd}`;
+    
+    if (this.selectedDate === localTodayStr) {
        return this.getSpanishDay(realToday) === dayName;
     }
     return false;
