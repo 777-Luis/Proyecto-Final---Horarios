@@ -190,7 +190,7 @@ interface MonthDay {
               </span>
             </div>
             <div class="info-chip"><span class="chip-label">Nivel</span><span>{{ selectedCurso()?.programa?.tipo_programa || 'N/A' }}</span></div>
-            <div class="info-chip"><span class="chip-label">Ambiente</span><span>{{ srv.horarioDelCurso()?.ambiente?.nombre || 'Sin asignar' }}</span></div>
+            <div class="info-chip"><span class="chip-label">Ambiente</span><span>{{ selectedCurso()?.ambiente?.nombre || srv.horarioDelCurso()?.ambiente?.nombre || 'Sin asignar' }}</span></div>
             <div class="info-chip"><span class="chip-label">Lectiva</span><span>{{ selectedCurso()?.fecha_inicio | date:'dd/MM/yy':'UTC' }} - {{ selectedCurso()?.fin_lectiva | date:'dd/MM/yy':'UTC' }}</span></div>
           </div>
 
@@ -1267,14 +1267,17 @@ Jornada: ${curso.jornada}`;
     const dd = String(now.getDate()).padStart(2, '0');
     const currentToday = `${yyyy}-${mm}-${dd}`;
     
-    const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hEnd, mEnd, sEnd] = (evt.hora_fin || '00:00:00').split(':');
+    const evtTimeEnd = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0));
 
     if (!registro) {
       if (eventDate < currentToday) {
         return { type: 'No asistio', text: 'No asistió' };
       }
       if (eventDate === currentToday) {
-        const evtTimeStart = new Date(eventDate + 'T' + evt.hora_inicio);
+        const [hStart, mStart, sStart] = (evt.hora_inicio || '00:00:00').split(':');
+        const evtTimeStart = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hStart), Number(mStart), Number(sStart || 0));
         
         if (now > evtTimeEnd) {
           return { type: 'No asistio', text: 'No asistió' };
@@ -1425,13 +1428,15 @@ Jornada: ${curso.jornada}`;
 
   getEventsForDay(day: string): any[] {
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const detalles = this.srv.horarioDelCurso()?.detalles ?? [];
+    const horario = this.srv.horarioDelCurso();
+    const detalles = horario?.detalles ?? [];
     return detalles
       .filter((d: any) => dayNames[d.dia] === day)
       .map((d: any) => ({
         ...d,
         topPx:    this._hourToTop(d.hora_inicio),
         heightPx: this._hourSpan(d.hora_inicio, d.hora_fin),
+        ambienteNombre: horario?.ambiente?.nombre || 'Sin asignar'
       }));
   }
 

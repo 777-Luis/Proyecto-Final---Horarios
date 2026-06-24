@@ -111,7 +111,7 @@ import { DataTableComponent, TableColumn } from '../../../shared/components/tabl
                  <!-- Form Fields -->
                  <div class="form-group grid-2">
                    <div>
-                     <label>Nombre Completo</label>
+                     <label>Nombre(s)</label>
                      <input type="text" class="form-control" name="nombre" [(ngModel)]="newUser.nombre" required />
                    </div>
                    <div>
@@ -271,7 +271,7 @@ import { DataTableComponent, TableColumn } from '../../../shared/components/tabl
               <div class="modal-body user-form-grid">
                  <div class="form-group grid-2">
                    <div>
-                     <label>Nombre Completo</label>
+                     <label>Nombre(s)</label>
                      <input type="text" class="form-control" name="nombre" [(ngModel)]="editUserPayload.nombre" required />
                    </div>
                    <div>
@@ -812,7 +812,7 @@ export class AdminUsersComponent implements OnInit {
     return this.srv.users().map((u: any) => ({
       id: u.id,
       documento: u.identificacion || u.persona?.numero_documento || 'No Asignado',
-      nombre: u.nombre || u.persona?.nombre || 'Desconocido',
+      nombre: `${u.nombre || ''} ${u.apellido || ''}`.trim() || 'Desconocido',
       correo: u.correo || u.persona?.correo || u.credencial?.username || 'Sin Correo',
       estado: u.estado,
       es_lider_area: u.es_lider_area,

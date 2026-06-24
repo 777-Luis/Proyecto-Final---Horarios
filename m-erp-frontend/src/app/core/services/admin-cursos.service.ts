@@ -57,12 +57,13 @@ export class AdminCursosService {
   }
 
   fetchInstructores(areaId?: string) {
-    let url = `${this.apiUrl}/users?role=Instructor&limit=1000`;
-    if (areaId) {
-      url += `&area_id=${areaId}`;
-    }
-    this.http.get<any>(url).subscribe(res => {
-      this.instructoresFilter.set(res.data || []);
+    // Obtenemos todos los usuarios y filtramos localmente para garantizar que la lista nunca esté vacía
+    // por culpa de un filtro estricto de area_id en el backend.
+    this.http.get<any>(`${this.apiUrl}/users?limit=1000`).subscribe(res => {
+      const data = res.data || res || [];
+      const arr = Array.isArray(data) ? data : [];
+      const mapped = arr.filter((u: any) => u.rol === 'Instructor' || u.rol_nombre === 'Instructor');
+      this.instructoresFilter.set(mapped);
     });
   }
 

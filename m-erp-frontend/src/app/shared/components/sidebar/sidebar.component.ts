@@ -4,14 +4,16 @@ import { RouterModule, Router } from '@angular/router';
 import { LucideAngularModule, LayoutDashboard, Users, CalendarDays, BookOpen, Building2, CalendarCheck, ClipboardList, UserCircle, ClipboardCheck, Settings, LogOut } from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
 
+import { LogoComponent } from '../logo/logo.component';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule, LogoComponent],
   template: `
     <aside class="sidebar">
       <div class="logo-container">
-        <span class="logo-short">CG</span>
+        <app-logo [size]="32" [animate]="true"></app-logo>
         <span class="logo-full">ChronoGest</span>
       </div>
 
@@ -80,13 +82,6 @@ import { AuthService } from '../../../core/auth/auth.service';
       white-space: nowrap;
       border-bottom: 1px solid rgba(255,255,255,0.1);
       color: var(--color-white);
-    }
-
-    .logo-short {
-      font-weight: 700;
-      font-size: 18px;
-      min-width: 24px;
-      text-align: center;
     }
 
     .logo-full {

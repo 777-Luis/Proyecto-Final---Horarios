@@ -23,6 +23,12 @@ export class UsersController {
     return this.usersService.findAllPaginated(filterDto);
   }
 
+  @Roles('Administrador', 'Instructor')
+  @Get('stats/poblacion')
+  async getPoblacionStats() {
+    return this.usersService.getPoblacionStats();
+  }
+
   @Roles('Administrador', 'Instructor', 'Aprendiz')
   @Get(':id')
   async findOneIndividual(@Param('id') id: string, @Req() req: any) {

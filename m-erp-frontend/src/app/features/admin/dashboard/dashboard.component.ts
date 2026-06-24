@@ -105,7 +105,7 @@ import { DashboardService } from '../../../core/services/dashboard.service';
           </div>
 
           <div class="glass-card chart-container">
-            <h3 class="card-title">Población por Área (Estimada)</h3>
+            <h3 class="card-title">Población por Área</h3>
             <div class="chart-wrapper">
               <canvas baseChart
                 [data]="dashboard.stats()?.poblacionChartData"

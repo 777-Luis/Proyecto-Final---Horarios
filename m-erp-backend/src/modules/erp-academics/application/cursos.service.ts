@@ -113,27 +113,34 @@ export class CursosService {
       }
     }
 
-    if (data.fecha_inicio) data.inicio_lectiva = data.fecha_inicio;
-    if (data.fecha_fin_lectiva) data.fin_lectiva = data.fecha_fin_lectiva;
+    const updatePayload: any = { ...data };
 
-    if (data.area_id) {
-      data.area = { id: data.area_id };
-      delete data.area_id;
+    if (updatePayload.fecha_inicio) { updatePayload.inicio_lectiva = updatePayload.fecha_inicio; delete updatePayload.fecha_inicio; }
+    if (updatePayload.fecha_fin_lectiva) { updatePayload.fin_lectiva = updatePayload.fecha_fin_lectiva; delete updatePayload.fecha_fin_lectiva; }
+
+    if (updatePayload.area_id !== undefined) {
+      updatePayload.area = updatePayload.area_id ? updatePayload.area_id : null;
+      delete updatePayload.area_id;
     }
-    if (data.programa_id) {
-      data.programa = { id: data.programa_id };
-      delete data.programa_id;
+    if (updatePayload.programa_id !== undefined) {
+      updatePayload.programa = updatePayload.programa_id ? updatePayload.programa_id : null;
+      delete updatePayload.programa_id;
     }
-    if (data.ambiente_sugerido) {
-      data.ambiente = { id: data.ambiente_sugerido };
-      delete data.ambiente_sugerido;
+    if (updatePayload.ambiente_sugerido !== undefined) {
+      updatePayload.ambiente = updatePayload.ambiente_sugerido ? updatePayload.ambiente_sugerido : null;
+      delete updatePayload.ambiente_sugerido;
     }
-    if (data.lider_id) {
-      data.lider = { id: data.lider_id };
-      delete data.lider_id;
+    if (updatePayload.lider_id !== undefined) {
+      updatePayload.lider = updatePayload.lider_id ? updatePayload.lider_id : null;
+      delete updatePayload.lider_id;
     }
 
-    await this.cursoRepo.update(id, data);
+    await this.cursoRepo.createQueryBuilder()
+      .update(Curso)
+      .set(updatePayload)
+      .where("id = :id", { id })
+      .execute();
+
     return this.findOne(id);
   }
 

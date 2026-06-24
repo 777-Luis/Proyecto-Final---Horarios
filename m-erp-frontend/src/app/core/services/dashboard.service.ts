@@ -58,6 +58,7 @@ export class DashboardService {
       instructores: this.http.get<any[]>(`${this.apiUrl}/users?role=Instructor`).pipe(catchError(() => of([]))),
       aprendices: this.http.get<any[]>(`${this.apiUrl}/users?role=Aprendiz`).pipe(catchError(() => of([]))),
       cursos: this.http.get<any[]>(`${this.apiUrl}/cursos`).pipe(catchError(() => of([]))),
+      poblacionStats: this.http.get<any[]>(`${this.apiUrl}/users/stats/poblacion`).pipe(catchError(() => of([]))),
       ambientesEstado: this.http.get<any[]>(`${this.apiUrl}/ambientes/estado`).pipe(catchError(() => of([]))),
       ambientes: this.http.get<any[]>(`${this.apiUrl}/ambientes`).pipe(catchError(() => of([]))),
       horarios: this.http.get<any[]>(`${this.apiUrl}/horarios`).pipe(catchError(() => of([]))),
@@ -94,7 +95,6 @@ export class DashboardService {
 
         const solicitudesArr = extractData(results.solicitudes);
         const registroClasesArr = extractData(results.registroClases);
-        const areasData = extractData(results.areas);
 
         const solicitudesPendientes = solicitudesArr.filter((s: any) => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').length;
         
@@ -114,34 +114,31 @@ export class DashboardService {
 
         const clasesSuspendidas = registroClasesArr.filter((c: any) => c.estado === 'SUSPENDIDA');
 
-        const areasArr = areasData.length > 0 ? areasData.map((a: any) => a.nombre) : ['Software', 'Agro', 'Bilingüismo'];
         const totalInst = extractCount(results.instructores);
         const totalApr = extractCount(results.aprendices);
         
-        const insPerArea = areasArr.map((_: any, i: number) => i === 0 ? totalInst : Math.floor(totalInst / areasArr.length));
-        insPerArea[0] = totalInst - insPerArea.slice(1).reduce((a: number, b: number) => a + b, 0); // ensure sum matches
-
-        const aprPerArea = areasArr.map((_: any, i: number) => i === 0 ? totalApr : Math.floor(totalApr / areasArr.length));
-        aprPerArea[0] = totalApr - aprPerArea.slice(1).reduce((a: number, b: number) => a + b, 0);
+        const poblacionData = results.poblacionStats || [];
+        const areasArr = poblacionData.map((p: any) => p.area);
+        const insPerArea = poblacionData.map((p: any) => p.instructores);
+        const aprPerArea = poblacionData.map((p: any) => p.aprendices);
 
         const poblacionChartData = {
-           labels: areasArr,
+           labels: areasArr.length > 0 ? areasArr : ['Sin Datos'],
            datasets: [
-             { label: 'Instructores', data: insPerArea, backgroundColor: '#2E7D52', borderRadius: 4 },
-             { label: 'Aprendices', data: aprPerArea, backgroundColor: '#3B82F6', borderRadius: 4 }
+             { label: 'Instructores', data: insPerArea.length > 0 ? insPerArea : [0], backgroundColor: '#2E7D52', borderRadius: 4 },
+             { label: 'Aprendices', data: aprPerArea.length > 0 ? aprPerArea : [0], backgroundColor: '#3B82F6', borderRadius: 4 }
            ]
         };
 
         const doughnutChartData = {
-          labels: ['Disponibles', 'Ocupados', 'Mantenimiento'],
+          labels: ['Disponibles', 'Ocupados'],
           datasets: [
             {
               data: [
                 ambientesDisponiblesCount, 
-                ambientesOcupadosCount, 
-                ambientesMantenimientoCount
+                ambientesOcupadosCount
               ],
-              backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
+              backgroundColor: ['#10B981', '#EF4444'],
               borderWidth: 0,
               hoverOffset: 4
             }

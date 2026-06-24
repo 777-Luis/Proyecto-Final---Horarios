@@ -30,14 +30,32 @@ export class AmbientesService {
     return ambiente;
   }
 
-  async create(data: Partial<Ambiente>) {
+  async create(data: Partial<Ambiente> & { area_id?: string }) {
     const ambiente = this.ambienteRepo.create(data);
+    if (data.area_id) {
+      ambiente.area = { id: data.area_id } as any;
+    }
     return this.ambienteRepo.save(ambiente);
   }
 
-  async update(id: string, data: Partial<Ambiente>) {
-    await this.ambienteRepo.update(id, data);
-    return this.findOne(id);
+  async update(id: string, data: Partial<Ambiente> & { area_id?: string }) {
+    try {
+      const updatePayload: any = {};
+      if (data.nombre !== undefined) updatePayload.nombre = data.nombre;
+      if (data.capacidad !== undefined) updatePayload.capacidad = data.capacidad;
+      if (data.area_id !== undefined) updatePayload.area = data.area_id ? data.area_id : null;
+
+      await this.ambienteRepo.createQueryBuilder()
+        .update(Ambiente)
+        .set(updatePayload)
+        .where("id = :id", { id })
+        .execute();
+
+      return await this.findOne(id);
+    } catch (e: any) {
+      console.error('Update Ambiente Error:', e);
+      throw e;
+    }
   }
 
   async delete(id: string) {
@@ -94,7 +112,7 @@ export class AmbientesService {
       return {
         id: amb.id,
         nombre: amb.nombre,
-        area: amb.area?.nombre,
+        area: amb.area ? { id: amb.area.id, nombre: amb.area.nombre } : null,
         capacidad: amb.capacidad,
         estado_manana: {
           disponible: !activoManana,

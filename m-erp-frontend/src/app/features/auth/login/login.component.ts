@@ -4,185 +4,198 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LogoComponent } from '../../../shared/components/logo/logo.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, LogoComponent],
   template: `
-    <div class="login-wrapper">
-      <div class="bg-pattern"></div>
-      
-      <!-- Decorative curved lines -->
-      <svg class="bg-lines" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-        <path d="M-200,600 C300,200 700,900 1600,300" stroke="rgba(255, 255, 255, 0.08)" stroke-width="24" fill="none" stroke-linecap="round"/>
-        <path d="M-100,650 C400,250 800,950 1700,350" stroke="rgba(255, 255, 255, 0.04)" stroke-width="40" fill="none" stroke-linecap="round"/>
-        <path d="M100,900 C500,400 1000,-100 1700,400" stroke="rgba(251, 191, 36, 0.7)" stroke-width="16" fill="none" stroke-linecap="round"/>
-      </svg>
-      
-      <div class="login-card">
-        <div class="logo-area">
-          <div class="logo-icon">
-            <lucide-icon name="calendar" [size]="28" color="#1B5C3A"></lucide-icon>
-          </div>
-          <h1>ChronoGest</h1>
-          <p class="subtitle">SENA Sede Yamboro</p>
+    <div class="split-layout">
+      <!-- Left side: Image and Brand -->
+      <div class="brand-panel">
+        <div class="brand-overlay"></div>
+        <div class="brand-content">
+          <app-logo [size]="80" [animate]="true" [rounded]="true" style="margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 24px;"></app-logo>
+          <h2>Gestión Inteligente de Horarios</h2>
+          <p>Plataforma oficial para la programación académica y administrativa del SENA Sede Yamboro.</p>
         </div>
+      </div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="form-container">
-          
-          @if (errorMessage()) {
-            <div class="alert-error">
-               <lucide-icon name="alert-circle" [size]="16" style="min-width: 16px;"></lucide-icon>
-               <span>{{ errorMessage() }}</span>
-            </div>
-          }
+      <!-- Right side: Login Form -->
+      <div class="form-panel">
+        <div class="form-wrapper">
+          <div class="form-header">
+            <h1>Bienvenido</h1>
+            <p>Ingresa tus credenciales para continuar al panel</p>
+          </div>
 
-          <div class="input-group">
-            <div class="input-wrapper" [class.focused]="isUserFocused">
-              <lucide-icon name="user" [size]="20" class="input-icon"></lucide-icon>
-              <input 
-                type="text" 
-                formControlName="username" 
-                placeholder="Usuario / Documento" 
-                (focus)="isUserFocused = true"
-                (blur)="isUserFocused = false"
-              />
-            </div>
-            @if (loginForm.get('username')?.invalid && loginForm.get('username')?.touched) {
-               <span class="error-msg">Requerido</span>
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+            
+            @if (errorMessage()) {
+              <div class="alert-error">
+                 <lucide-icon name="alert-circle" [size]="16" style="min-width: 16px;"></lucide-icon>
+                 <span>{{ errorMessage() }}</span>
+              </div>
             }
-          </div>
 
-          <div class="input-group">
-            <div class="input-wrapper" [class.focused]="isPassFocused">
-              <lucide-icon name="lock" [size]="20" class="input-icon"></lucide-icon>
-              <input 
-                [type]="showPassword() ? 'text' : 'password'" 
-                formControlName="password" 
-                placeholder="Contraseña" 
-                (focus)="isPassFocused = true"
-                (blur)="isPassFocused = false"
-              />
-              <button type="button" class="btn-eye" (click)="togglePassword()">
-                <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
-              </button>
+            <div class="input-group">
+              <label>Usuario o Documento</label>
+              <div class="input-box" [class.focused]="isUserFocused">
+                <lucide-icon name="user" [size]="18" class="input-icon"></lucide-icon>
+                <input 
+                  type="text" 
+                  formControlName="username" 
+                  placeholder="Ej. 1083994..." 
+                  (focus)="isUserFocused = true"
+                  (blur)="isUserFocused = false"
+                />
+              </div>
             </div>
+
+            <div class="input-group">
+              <label>Contraseña</label>
+              <div class="input-box" [class.focused]="isPassFocused">
+                <lucide-icon name="lock" [size]="18" class="input-icon"></lucide-icon>
+                <input 
+                  [type]="showPassword() ? 'text' : 'password'" 
+                  formControlName="password" 
+                  placeholder="••••••••" 
+                  (focus)="isPassFocused = true"
+                  (blur)="isPassFocused = false"
+                />
+                <button type="button" class="btn-eye" (click)="togglePassword()">
+                  <lucide-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-options">
+              <a class="forgot-link" (click)="goToRecovery()">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading()">
+               <span *ngIf="!isLoading()">Iniciar Sesión</span>
+               <lucide-icon name="loader-2" [size]="18" *ngIf="isLoading()" class="spin-icon"></lucide-icon>
+               <span *ngIf="isLoading()">Verificando...</span>
+            </button>
+          </form>
+
+          <div class="back-home">
+            <button class="btn-secondary" (click)="goToLanding()">
+               <lucide-icon name="arrow-left" [size]="16"></lucide-icon>
+               Volver al inicio
+            </button>
           </div>
-
-          <button type="submit" class="btn-primary" [disabled]="loginForm.invalid || isLoading()">
-             <lucide-icon name="log-in" [size]="18" *ngIf="!isLoading()"></lucide-icon>
-             <lucide-icon name="loader-2" [size]="18" *ngIf="isLoading()" class="spin-icon"></lucide-icon>
-             <span>{{ isLoading() ? 'Validando...' : 'Iniciar Sesión' }}</span>
-          </button>
-
-          <div class="form-actions">
-            <a class="forgot-link" (click)="goToRecovery()">¿Olvidó su contraseña?</a>
-          </div>
-        </form>
-
-        <div class="back-to-home">
-          <a class="back-link" (click)="goToLanding()">
-             <lucide-icon name="arrow-left" [size]="14"></lucide-icon>
-             Volver a la página principal
-          </a>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .login-wrapper {
-      min-height: 100vh;
+    .split-layout {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #1B5C3A 0%, #0D3321 100%);
-      position: relative;
-      overflow: hidden;
+      min-height: 100vh;
+      width: 100%;
       font-family: 'Inter', system-ui, sans-serif;
+      background: #FFFFFF;
     }
 
-    .bg-pattern {
+    /* --- Left Panel: Image --- */
+    .brand-panel {
+      flex: 1;
+      position: relative;
+      background: url('/images/campus-yamboro.png') center center / cover no-repeat;
+      display: none; /* Hidden on mobile */
+    }
+
+    @media (min-width: 1024px) {
+      .brand-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    .brand-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px);
-      background-size: 32px 32px;
-      opacity: 0.8;
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.9) 0%, rgba(2, 44, 34, 0.95) 100%);
       z-index: 1;
-      animation: float 20s linear infinite;
     }
 
-    @keyframes float {
-      0% { transform: translateY(0) translateX(0); }
-      100% { transform: translateY(-32px) translateX(-32px); }
-    }
-
-    .bg-lines {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-      filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.4)); /* Glow effect */
-    }
-
-    .login-card {
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(12px);
-      border-radius: 20px;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
-      padding: 48px;
-      width: 100%;
-      max-width: 420px;
-      z-index: 2;
+    .brand-content {
       position: relative;
-      animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      z-index: 2;
+      text-align: center;
+      color: #FFFFFF;
+      max-width: 480px;
+      padding: 40px;
     }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(30px); }
+    .brand-content h2 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+      letter-spacing: -1px;
+    }
+
+    .brand-content p {
+      font-size: 18px;
+      color: #D1FAE5;
+      line-height: 1.6;
+      font-weight: 400;
+    }
+
+    /* --- Right Panel: Form --- */
+    .form-panel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #FFFFFF;
+      padding: 24px;
+    }
+
+    .form-wrapper {
+      width: 100%;
+      max-width: 400px;
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .logo-area {
-      text-align: center;
-      margin-bottom: 40px;
+    .form-header {
+      margin-bottom: 48px;
     }
 
-    .logo-icon {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-      box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.2);
-    }
-
-    h1 {
-      font-size: 28px;
-      color: #111827;
-      margin: 0 0 4px 0;
+    .form-header h1 {
+      font-size: 36px;
       font-weight: 800;
-      letter-spacing: -0.5px;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #064E3B 0%, #10B981 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: inline-block;
     }
 
-    .subtitle {
-      font-size: 14px;
+    .form-header p {
+      font-size: 16px;
       color: #6B7280;
       margin: 0;
-      font-weight: 500;
+      font-weight: 400;
     }
 
-    .form-container {
+    .login-form {
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 20px;
     }
 
     .alert-error {
@@ -208,41 +221,56 @@ import { AuthService } from '../../../core/auth/auth.service';
     .input-group {
       display: flex;
       flex-direction: column;
-      position: relative;
+      gap: 6px;
     }
 
-    .input-wrapper {
+    .input-group label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .input-box {
       position: relative;
       display: flex;
       align-items: center;
-      border-bottom: 2px solid #E5E7EB;
-      transition: border-color 0.3s ease;
-      background: transparent;
+      background: #FFFFFF;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
-    .input-wrapper.focused {
-      border-bottom-color: #16A34A; /* Brighter green */
+    .input-box:hover {
+      border-color: #9CA3AF;
+    }
+
+    .input-box.focused {
+      background: #FFFFFF;
+      border-color: #16A34A;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
     }
 
     .input-icon {
       position: absolute;
-      left: 4px;
+      left: 14px;
       color: #9CA3AF;
-      transition: color 0.3s ease;
+      transition: color 0.2s;
     }
 
-    .input-wrapper.focused .input-icon {
+    .input-box.focused .input-icon {
       color: #16A34A;
     }
 
     input {
       width: 100%;
-      padding: 12px 40px 12px 36px;
+      padding: 12px 40px 12px 42px;
       border: none;
       background: transparent;
       font-size: 15px;
       color: #111827;
       outline: none;
+      border-radius: 8px;
     }
     
     input::placeholder {
@@ -252,7 +280,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 
     .btn-eye {
       position: absolute;
-      right: 4px;
+      right: 14px;
       background: transparent;
       border: none;
       color: #9CA3AF;
@@ -268,45 +296,51 @@ import { AuthService } from '../../../core/auth/auth.service';
       color: #4B5563;
     }
 
-    .error-msg {
-      font-size: 11px;
-      color: #DC2626;
-      position: absolute;
-      bottom: -18px;
-      left: 4px;
+    .form-options {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -4px;
+      margin-bottom: 8px;
+    }
+
+    .forgot-link {
+      font-size: 13px;
+      color: #16A34A;
       font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .forgot-link:hover {
+      color: #15803D;
+      text-decoration: underline;
     }
 
     .btn-primary {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      background: linear-gradient(135deg, #16A34A 0%, #15803D 100%); /* Vibrant gradient */
+      gap: 8px;
+      background: #16A34A;
       color: #FFFFFF;
       border: none;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
       width: 100%;
-      margin-top: 12px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     }
 
     .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(22, 163, 74, 0.4);
-      background: linear-gradient(135deg, #15803D 0%, #166534 100%);
+      background: #15803D;
     }
 
     .btn-primary:disabled {
-      background: #9CA3AF;
-      box-shadow: none;
+      opacity: 0.6;
       cursor: not-allowed;
-      transform: none;
     }
 
     .spin-icon {
@@ -317,49 +351,30 @@ import { AuthService } from '../../../core/auth/auth.service';
       100% { transform: rotate(360deg); }
     }
 
-    .form-actions {
+    .back-home {
+      margin-top: 40px;
       display: flex;
       justify-content: center;
-      margin-top: 16px;
     }
 
-    .forgot-link {
-      font-size: 14px;
-      color: #6B7280;
-      cursor: pointer;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-
-    .forgot-link:hover {
-      color: #16A34A;
-      text-decoration: underline;
-    }
-
-    .back-to-home {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1px solid #F3F4F6;
-      text-align: center;
-    }
-
-    .back-link {
+    .btn-secondary {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
-      font-size: 13px;
+      background: transparent;
+      border: none;
       color: #6B7280;
-      cursor: pointer;
+      font-size: 14px;
       font-weight: 500;
-      transition: all 0.2s ease;
-      padding: 6px 12px;
+      cursor: pointer;
+      padding: 8px 16px;
       border-radius: 6px;
+      transition: all 0.2s ease;
     }
 
-    .back-link:hover {
-      color: #111827;
+    .btn-secondary:hover {
       background: #F3F4F6;
+      color: #111827;
     }
   `]
 })

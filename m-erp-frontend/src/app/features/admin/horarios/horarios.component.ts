@@ -821,10 +821,15 @@ export class AdminHorariosComponent implements OnInit {
 
     const reg = registros.find(r => (r.horario_detalle_id === detalle.id || r.horario_detalle?.id === detalle.id) && r.fecha?.startsWith(eventDate));
     const now = new Date();
-    const evtTimeEnd = new Date(eventDate + 'T' + detalle.hora_fin);
+    
+    // Parse time robustly as local time
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hEnd, mEnd, sEnd] = (detalle.hora_fin || '00:00:00').split(':');
+    const evtTimeEnd = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0));
     
     const getProg = () => {
-       const start = new Date(eventDate + 'T' + detalle.hora_inicio).getTime();
+       const [hStart, mStart, sStart] = (detalle.hora_inicio || '00:00:00').split(':');
+       const start = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hStart), Number(mStart), Number(sStart || 0)).getTime();
        const end = evtTimeEnd.getTime();
        const nowTime = now.getTime();
        if (nowTime < start) return 0;
@@ -838,7 +843,7 @@ export class AdminHorariosComponent implements OnInit {
        const dd = String(now.getDate()).padStart(2, '0');
        const currentToday = `${yyyy}-${mm}-${dd}`;
        
-       const evtTimeStart = new Date(eventDate + 'T' + detalle.hora_inicio);
+       const evtTimeStart = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number((detalle.hora_inicio || '00:00:00').split(':')[0]), Number((detalle.hora_inicio || '00:00:00').split(':')[1]), Number((detalle.hora_inicio || '00:00:00').split(':')[2] || 0));
        
        if (eventDate < currentToday) {
          return { text: 'No asistió', cssClass: 'badge-no-asistio' };

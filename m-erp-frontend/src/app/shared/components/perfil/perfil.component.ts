@@ -81,7 +81,7 @@ import { AdminUsersService } from '../../../core/services/admin-users.service';
               <form [formGroup]="perfilForm" class="modern-form">
                  <div class="form-row">
                    <div class="input-group">
-                     <label>Nombre Completo</label>
+                     <label>Nombre(s)</label>
                      <div class="input-wrapper">
                        <lucide-icon name="user" [size]="18" class="input-icon"></lucide-icon>
                        <input type="text" formControlName="nombre" class="form-control with-icon" placeholder="Ej. Juan Pérez" />

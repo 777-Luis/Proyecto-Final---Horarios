@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Building, MapPin, Users, Sun, Moon, Plus, X, Check, AlertCircle, Search, Clock, Download, Calendar, User, CheckCircle } from 'lucide-angular';
+import { LucideAngularModule, Building, MapPin, Users, Sun, Moon, Plus, X, Check, AlertCircle, Search, Clock, Download, Calendar, User, CheckCircle, Pencil, Trash2 } from 'lucide-angular';
 import { AdminAmbientesService } from '../../../core/services/admin-ambientes.service';
 
 @Component({
@@ -37,11 +37,12 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
           <input
             type="text"
             class="search-input"
-            [(ngModel)]="searchTerm"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
             placeholder="Buscar por ambiente o área...">
         </div>
         
-        <select [(ngModel)]="jornadaFilter" class="field-input" style="width: auto; max-width: 200px;">
+        <select [ngModel]="jornadaFilter()" (ngModelChange)="jornadaFilter.set($event)" class="field-input" style="width: auto; max-width: 200px;">
           <option value="Todas">Todas las jornadas</option>
           <option value="Mañana">Mañana</option>
           <option value="Tarde">Tarde</option>
@@ -83,6 +84,14 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
                         <div class="amb-nombre" style="color: #1B5C3A; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">{{ amb.nombre }}</div>
                         <div class="amb-area" style="color: #6B7280; font-size: 13px; margin-top: 2px;">{{ getAreaName(amb.area) }}</div>
                         <div class="amb-capa" style="color: #9CA3AF; font-size: 12px; margin-top: 4px;">Capacidad: {{ amb.capacidad }} personas</div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                           <button class="action-btn" title="Editar Ambiente" (click)="openEditModal(amb)" style="padding: 4px; background: none; border: none; color: #2E7D52; cursor: pointer;">
+                             <lucide-icon name="pencil" [size]="14"></lucide-icon>
+                           </button>
+                           <button class="action-btn" title="Eliminar Ambiente" (click)="openDeleteModal(amb)" style="padding: 4px; background: none; border: none; color: #DC2626; cursor: pointer;">
+                             <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                           </button>
+                        </div>
                       </div>
                     </td>
                     
@@ -159,6 +168,27 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
       </div>
     </div>
 
+    <!-- ─── Modal Confirmar Eliminación ──────────────────────── -->
+    @if (showDeleteModal()) {
+      <div class="modal-overlay" (click)="closeDeleteModal()">
+        <div class="modal-container" style="max-width: 400px; text-align: center; padding: 30px 24px;" (click)="$event.stopPropagation()">
+          <div style="background: #FEE2E2; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #DC2626;">
+            <lucide-icon name="trash-2" [size]="28"></lucide-icon>
+          </div>
+          <h2 style="margin: 0 0 10px; font-size: 18px; color: #111;">Eliminar Ambiente</h2>
+          <p style="margin: 0 0 24px; color: #6B7280; font-size: 14px; line-height: 1.5;">
+            ¿Está seguro de que desea eliminar <strong>{{ ambienteToDelete()?.nombre }}</strong>? Esta acción no se puede deshacer.
+          </p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button class="btn-cancel" (click)="closeDeleteModal()" [disabled]="srv.isSaving()" style="flex: 1;">Cancelar</button>
+            <button class="btn-save" (click)="confirmDelete()" [disabled]="srv.isSaving()" style="flex: 1; background: #DC2626;">
+              @if (srv.isSaving()) { <span class="spinner"></span> } @else { Eliminar }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- ─── Modal Crear Ambiente ──────────────────────────────── -->
     @if (showModal()) {
       <div class="modal-overlay" (click)="closeModal()">
@@ -166,7 +196,7 @@ import { AdminAmbientesService } from '../../../core/services/admin-ambientes.se
           <div class="modal-header">
             <h2 id="modal-title" class="modal-title">
               <lucide-icon name="building" [size]="20"></lucide-icon>
-              Nuevo Ambiente
+              {{ isEditMode() ? 'Editar Ambiente' : 'Nuevo Ambiente' }}
             </h2>
             <button class="modal-close" (click)="closeModal()" aria-label="Cerrar modal">
               <lucide-icon name="x" [size]="18"></lucide-icon>
@@ -341,7 +371,7 @@ export class AdminAmbientesComponent implements OnInit {
   srv = inject(AdminAmbientesService);
   cdr = inject(ChangeDetectorRef);
   
-  searchTerm = '';
+  searchTerm = signal('');
   jornadaFilter = signal('Todas');
   selectedDate = signal((() => {
     const now = new Date();
@@ -350,15 +380,21 @@ export class AdminAmbientesComponent implements OnInit {
   verificandoDisponibilidad = signal(false);
 
   showModal = signal(false);
+  isEditMode = signal(false);
+  editingId = signal<string | null>(null);
+
+  showDeleteModal = signal(false);
+  ambienteToDelete = signal<any>(null);
+
   formTouched = false;
   form = { nombre: '', area_id: '', capacidad: 0 };
 
-  readonly icons = { Building, MapPin, Users, Sun, Moon, Plus, X, Check, AlertCircle, Search, Clock, Download, Calendar, User, CheckCircle };
+  readonly icons = { Building, MapPin, Users, Sun, Moon, Plus, X, Check, AlertCircle, Search, Clock, Download, Calendar, User, CheckCircle, Pencil, Trash2 };
   readonly days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   filteredAmbientes = computed(() => {
     let list = this.srv.ambientesList();
-    const term = this.searchTerm.toLowerCase().trim();
+    const term = this.searchTerm().toLowerCase().trim();
     const jornada = this.jornadaFilter();
     const verificar = this.verificandoDisponibilidad();
     
@@ -480,15 +516,17 @@ export class AdminAmbientesComponent implements OnInit {
     );
 
     const now = new Date();
-    const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hEnd, mEnd, sEnd] = (evt.hora_fin || '00:00:00').split(':');
+    const evtTimeEnd = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0));
 
     if (!registro) {
       const yyyy = now.getFullYear();
       const mm = String(now.getMonth() + 1).padStart(2, '0');
       const dd = String(now.getDate()).padStart(2, '0');
       const currentToday = `${yyyy}-${mm}-${dd}`;
-      const evtTimeStart = new Date(eventDate + 'T' + evt.hora_inicio);
-      const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
+      const [hStart, mStart, sStart] = (evt.hora_inicio || '00:00:00').split(':');
+      const evtTimeStart = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hStart), Number(mStart), Number(sStart || 0));
 
       if (eventDate < currentToday) {
          return { type: 'No-asistio', text: 'No asistió' };
@@ -515,8 +553,12 @@ export class AdminAmbientesComponent implements OnInit {
     if (dayIndex === -1) return 0;
     
     const eventDate = dates[dayIndex];
-    const start = new Date(eventDate + 'T' + evt.hora_inicio).getTime();
-    const end = new Date(eventDate + 'T' + evt.hora_fin).getTime();
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hStart, mStart, sStart] = (evt.hora_inicio || '00:00:00').split(':');
+    const [hEnd, mEnd, sEnd] = (evt.hora_fin || '00:00:00').split(':');
+    
+    const start = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hStart), Number(mStart), Number(sStart || 0)).getTime();
+    const end = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0)).getTime();
     const now = new Date().getTime();
 
     if (now < start) return 0;
@@ -528,9 +570,51 @@ export class AdminAmbientesComponent implements OnInit {
   }
 
   openModal() {
+    this.isEditMode.set(false);
+    this.editingId.set(null);
     this.form = { nombre: '', area_id: '', capacidad: 0 };
     this.formTouched = false;
     this.showModal.set(true);
+  }
+
+  openEditModal(amb: any) {
+    this.isEditMode.set(true);
+    this.editingId.set(amb.id);
+    const areaId = typeof amb.area === 'object' ? (amb.area?.id || '') : '';
+    this.form = { 
+      nombre: amb.nombre, 
+      area_id: areaId, 
+      capacidad: amb.capacidad 
+    };
+    this.formTouched = false;
+    this.showModal.set(true);
+  }
+
+  openDeleteModal(amb: any) {
+    this.ambienteToDelete.set(amb);
+    this.showDeleteModal.set(true);
+  }
+
+  closeDeleteModal() {
+    if (this.srv.isSaving()) return;
+    this.showDeleteModal.set(false);
+    this.ambienteToDelete.set(null);
+  }
+
+  confirmDelete() {
+    const amb = this.ambienteToDelete();
+    if (!amb) return;
+    this.srv.deleteAmbiente(amb.id).subscribe({
+      next: () => {
+        this.srv.isSaving.set(false);
+        this.closeDeleteModal();
+        this.srv.showSuccess('Ambiente eliminado exitosamente');
+        this.srv.fetchAmbientes(null);
+      },
+      error: () => {
+        this.srv.isSaving.set(false);
+      }
+    });
   }
 
   closeModal() {
@@ -544,21 +628,37 @@ export class AdminAmbientesComponent implements OnInit {
     const { nombre, area_id, capacidad } = this.form;
     if (!nombre.trim() || !area_id || !(capacidad > 0)) return;
 
-    this.srv.createAmbiente({
+    const payload = {
       nombre: nombre.trim(),
       area_id,
       capacidad: Number(capacidad)
-    }).subscribe({
-      next: () => {
-        this.srv.isSaving.set(false);
-        this.showModal.set(false);
-        this.srv.showSuccess('Ambiente creado exitosamente');
-        this.srv.fetchAmbientes(null);
-      },
-      error: () => {
-        this.srv.isSaving.set(false);
-      }
-    });
+    };
+
+    if (this.isEditMode() && this.editingId()) {
+      this.srv.updateAmbiente(this.editingId()!, payload).subscribe({
+        next: () => {
+          this.srv.isSaving.set(false);
+          this.showModal.set(false);
+          this.srv.showSuccess('Ambiente actualizado exitosamente');
+          this.srv.fetchAmbientes(null);
+        },
+        error: () => {
+          this.srv.isSaving.set(false);
+        }
+      });
+    } else {
+      this.srv.createAmbiente(payload).subscribe({
+        next: () => {
+          this.srv.isSaving.set(false);
+          this.showModal.set(false);
+          this.srv.showSuccess('Ambiente creado exitosamente');
+          this.srv.fetchAmbientes(null);
+        },
+        error: () => {
+          this.srv.isSaving.set(false);
+        }
+      });
+    }
   }
 
   getAreaName(area: any): string {

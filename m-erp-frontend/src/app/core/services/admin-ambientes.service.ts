@@ -87,6 +87,16 @@ export class AdminAmbientesService {
     return this.http.post<any>(`${this.apiUrl}/ambientes`, payload);
   }
 
+  updateAmbiente(id: string, payload: { nombre?: string; area_id?: string; capacidad?: number }) {
+    this.isSaving.set(true);
+    return this.http.patch<any>(`${this.apiUrl}/ambientes/${id}`, payload);
+  }
+
+  deleteAmbiente(id: string) {
+    this.isSaving.set(true);
+    return this.http.delete<any>(`${this.apiUrl}/ambientes/${id}`);
+  }
+
   showSuccess(msg: string, durationMs = 3500) {
     this.successMessage.set(msg);
     setTimeout(() => this.successMessage.set(null), durationMs);

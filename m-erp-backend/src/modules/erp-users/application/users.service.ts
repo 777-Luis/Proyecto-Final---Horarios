@@ -371,5 +371,41 @@ export class UsersService {
       await queryRunner.release();
     }
   }
+
+  async getPoblacionStats() {
+    const areas = await this.areaRepo.find();
+    
+    // Instructores por área
+    const instructoresRaw = await this.usuarioRepo.createQueryBuilder('u')
+      .leftJoin('u.rol', 'r')
+      .select('u.area_id', 'area_id')
+      .addSelect('COUNT(u.id)', 'count')
+      .where('r.nombre = :role', { role: 'Instructor' })
+      .andWhere('u.area_id IS NOT NULL')
+      .groupBy('u.area_id')
+      .getRawMany();
+
+    // Aprendices por área (via matriculas -> curso -> area)
+    const aprendicesRaw = await this.usuarioRepo.createQueryBuilder('u')
+      .leftJoin('u.rol', 'r')
+      .leftJoin(Matricula, 'mat', 'mat.aprendiz_id = u.persona_id')
+      .leftJoin(Curso, 'cur', 'mat.curso_id = cur.id')
+      .select('cur.area_id', 'area_id')
+      .addSelect('COUNT(DISTINCT u.id)', 'count')
+      .where('r.nombre = :role', { role: 'Aprendiz' })
+      .andWhere('cur.area_id IS NOT NULL')
+      .groupBy('cur.area_id')
+      .getRawMany();
+
+    return areas.map(a => {
+      const instCount = parseInt(instructoresRaw.find(r => r.area_id === a.id)?.count || '0', 10);
+      const aprCount = parseInt(aprendicesRaw.find(r => r.area_id === a.id)?.count || '0', 10);
+      return {
+        area: a.nombre,
+        instructores: instCount,
+        aprendices: aprCount
+      };
+    });
+  }
 }
 

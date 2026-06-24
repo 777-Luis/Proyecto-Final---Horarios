@@ -161,7 +161,10 @@ export class InstructorService {
   fetchInstructoresArea() {
     // Para simplificar listaremos todos los instructores. (En backend podríamos filtrar por area).
     this.http.get<any>(`${this.apiUrl}/users?role=Instructor&limit=100`).subscribe({
-       next: (res) => this.instructoresArea.set(res.data)
+       next: (res) => {
+         const data = res.data || res || [];
+         this.instructoresArea.set(Array.isArray(data) ? data : []);
+       }
     });
   }
 

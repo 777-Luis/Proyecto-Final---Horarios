@@ -154,7 +154,9 @@ export class AdminHorariosService {
     );
 
     const now = new Date();
-    const evtTimeEnd = new Date(eventDate + 'T' + evt.hora_fin);
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hEnd, mEnd, sEnd] = (evt.hora_fin || '00:00:00').split(':');
+    const evtTimeEnd = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0));
 
     if (!registro) {
       if (now > evtTimeEnd) return { type: 'No-asistio', text: 'No asistió' };
@@ -174,8 +176,11 @@ export class AdminHorariosService {
     if (dayIndex === -1) return 0;
     
     const eventDate = this.getDatesOfWeek(this.currentDateStr())[dayIndex];
-    const start = new Date(eventDate + 'T' + evt.hora_inicio).getTime();
-    const end = new Date(eventDate + 'T' + evt.hora_fin).getTime();
+    const [yyyyStr, mmStr, ddStr] = eventDate.split('-');
+    const [hStart, mStart, sStart] = (evt.hora_inicio || '00:00:00').split(':');
+    const [hEnd, mEnd, sEnd] = (evt.hora_fin || '00:00:00').split(':');
+    const start = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hStart), Number(mStart), Number(sStart || 0)).getTime();
+    const end = new Date(Number(yyyyStr), Number(mmStr) - 1, Number(ddStr), Number(hEnd), Number(mEnd), Number(sEnd || 0)).getTime();
     const now = new Date().getTime();
 
     if (now < start) return 0;
