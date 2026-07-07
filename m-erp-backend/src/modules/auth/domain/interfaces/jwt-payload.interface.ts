@@ -4,4 +4,5 @@ export interface JwtPayload {
   role: string; // rol nombre
   userId: string;
   personaId: string | null;
+  isSuperAdmin?: boolean;
 }

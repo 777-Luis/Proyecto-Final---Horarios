@@ -12,10 +12,15 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   let clonedRequest = req;
   
   if (token) {
+    const tenantId = localStorage.getItem('tenant_id');
+    let headersConfig: any = {
+      Authorization: `Bearer ${token}`
+    };
+    if (tenantId) {
+      headersConfig['X-Tenant-Id'] = tenantId;
+    }
     clonedRequest = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
+      setHeaders: headersConfig
     });
   }
 

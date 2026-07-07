@@ -47,7 +47,14 @@ export class SuperadminService {
   }
 
   async getUsuarios() {
-    return this.usuarioRepo.find({ relations: ['persona', 'rol'] });
+    const usuarios = await this.usuarioRepo.find({ relations: ['persona', 'rol', 'credencial'] });
+    const tenants = await this.tenantRepo.find();
+    
+    return usuarios.map(u => ({
+      ...u,
+      username: u.credencial?.username || 'N/A',
+      sede_nombre: tenants.find(t => t.id === u.sede_id)?.nombre || (u.sede_id || 'Sin Sede')
+    }));
   }
 
   async getReportes() {

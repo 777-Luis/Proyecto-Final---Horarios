@@ -34,7 +34,7 @@ import { HttpClient } from '@angular/common/http';
             <span>Usuarios Globales</span>
           </a>
           <a routerLink="/superadmin/reportes" routerLinkActive="active" class="nav-item">
-            <lucide-icon name="bar-chart-3" [size]="20"></lucide-icon>
+            <lucide-icon name="bar-chart-2" [size]="20"></lucide-icon>
             <span>Reportes Nacionales</span>
           </a>
         </nav>

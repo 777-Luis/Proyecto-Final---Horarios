@@ -48,7 +48,7 @@ import { HttpClient } from '@angular/common/http';
                   </td>
                   <td class="actions-cell">
                     <button class="btn-icon text-blue" title="Editar" (click)="edit(sede)">
-                      <lucide-icon name="edit-2" [size]="16"></lucide-icon>
+                      <lucide-icon name="pencil" [size]="16"></lucide-icon>
                     </button>
                     <button class="btn-icon text-red" title="Eliminar" (click)="delete(sede.id)">
                       <lucide-icon name="trash-2" [size]="16"></lucide-icon>

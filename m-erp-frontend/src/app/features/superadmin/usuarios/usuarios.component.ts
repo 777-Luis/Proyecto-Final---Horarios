@@ -47,7 +47,7 @@ import { FormsModule } from '@angular/forms';
             <tbody>
               @for (u of filteredUsuarios(); track u.id) {
                 <tr>
-                  <td class="font-medium">{{ u.credencial?.username || 'N/A' }}</td>
+                  <td class="font-medium">{{ u.username || 'N/A' }}</td>
                   <td>{{ u.persona?.nombre }} {{ u.persona?.apellido }}</td>
                   <td><span class="badge gray">{{ u.rol?.nombre }}</span></td>
                   <td>
@@ -56,8 +56,7 @@ import { FormsModule } from '@angular/forms';
                     </span>
                   </td>
                   <td class="text-right font-medium text-gray">
-                    <!-- Si tiene sede_id, lo ideal sería cruzar con el array de sedes para ver el nombre. Como simplificación mostraremos el UUID o "Global" si es null -->
-                    {{ u.persona?.sede_id || 'Nacional' }}
+                    {{ u.sede_nombre }}
                   </td>
                 </tr>
               }
@@ -120,7 +119,7 @@ export class SuperadminUsuariosComponent implements OnInit {
   filteredUsuarios() {
     return this.usuarios().filter(u => {
       const matchSearch = (u.persona?.nombre || '').toLowerCase().includes(this.searchTerm.toLowerCase()) || 
-                          (u.credencial?.username || '').toLowerCase().includes(this.searchTerm.toLowerCase());
+                          (u.username || '').toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchRole = this.selectedRole ? u.rol?.nombre === this.selectedRole : true;
       return matchSearch && matchRole;
     });

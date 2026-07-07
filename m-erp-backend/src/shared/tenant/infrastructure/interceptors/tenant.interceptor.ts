@@ -52,7 +52,11 @@ export class TenantInterceptor implements NestInterceptor {
     // uses the same connection.
     // Since we must implement Option 1 as requested:
 
-    if (isSuperAdmin) {
+    let headerTenantId = request.headers['x-tenant-id'];
+
+    if (isSuperAdmin && headerTenantId) {
+      await this.dataSource.query(`SET rls.tenant_id = '${headerTenantId}'`);
+    } else if (isSuperAdmin) {
       await this.dataSource.query(`SET rls.is_superadmin = 'true'`);
     } else if (sedeId) {
       await this.dataSource.query(`SET rls.tenant_id = '${sedeId}'`);
