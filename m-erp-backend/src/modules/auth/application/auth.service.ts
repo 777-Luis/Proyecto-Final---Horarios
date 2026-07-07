@@ -9,6 +9,7 @@ import { Usuario } from '../../erp-users/domain/usuario.entity';
 import { Credencial } from '../../erp-users/domain/credencial.entity';
 import { Acceso } from '../../erp-users/domain/acceso.entity';
 import { Aplicativo } from '../../erp-users/domain/aplicativo.entity';
+import { Tenant } from '../../erp-centers/domain/entities/tenant.entity';
 import { LoginDto } from '../infrastructure/controllers/dtos/login.dto';
 import { JwtPayload } from '../domain/interfaces/jwt-payload.interface';
 
@@ -21,6 +22,7 @@ export class AuthService {
     @InjectRepository(Credencial) private credencialRepo: Repository<Credencial>,
     @InjectRepository(Acceso) private accesoRepo: Repository<Acceso>,
     @InjectRepository(Aplicativo) private aplicativoRepo: Repository<Aplicativo>,
+    @InjectRepository(Tenant) private tenantRepo: Repository<Tenant>,
     private jwtService: JwtService,
   ) {
     this.transporter = nodemailer.createTransport({
@@ -44,11 +46,21 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    // fetch user with role
-    const usuario = await this.usuarioRepo.findOne({
-      where: { credencial: { id: credencial.id } },
-      relations: ['rol', 'persona'],
-    });
+    // fetch user with role bypassing RLS for login
+    const queryRunner = this.usuarioRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    
+    let usuario;
+    try {
+      await queryRunner.query(`SET rls.is_superadmin = 'true'`);
+      usuario = await queryRunner.manager.findOne(Usuario, {
+        where: { credencial: { id: credencial.id } },
+        relations: ['rol', 'persona'],
+      });
+    } finally {
+      await queryRunner.query(`RESET rls.is_superadmin`);
+      await queryRunner.release();
+    }
 
     if (!usuario || !usuario.estado) {
       throw new UnauthorizedException('Usuario inactivo o no encontrado');
@@ -74,12 +86,28 @@ export class AuthService {
     credencial.ultimo_acceso = new Date();
     await this.credencialRepo.save(credencial);
 
-    const payload: JwtPayload = {
+    const isSuperAdmin = usuario.rol?.nombre === 'superadmin';
+    let codigoSede = null;
+    
+    if (!isSuperAdmin && usuario.sede_id) {
+      const tenant = await this.tenantRepo.findOne({ where: { id: usuario.sede_id } });
+      if (tenant) {
+        codigoSede = tenant.codigo;
+      }
+    }
+
+    const payload: any = { // Use any or update JwtPayload interface later if needed
       sub: usuario.id,
       username: credencial.username,
       role: usuario.rol?.nombre || 'Ninguno',
       userId: usuario.id,
       personaId: usuario.persona ? usuario.persona.id : '',
+      
+      // Multitenant payload updates
+      persona_id: usuario.persona ? usuario.persona.id : '',
+      rol: usuario.rol?.nombre || 'Ninguno',
+      sede_id: codigoSede,
+      isSuperAdmin: isSuperAdmin,
     };
 
     return {

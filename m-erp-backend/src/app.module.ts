@@ -12,6 +12,9 @@ import { ChronogestSchedulesModule } from './modules/chronogest-schedules/infras
 import { ChronogestRequestsModule } from './modules/chronogest-requests/infrastructure/chronogest-requests.module';
 import { AuthModule } from './modules/auth/infrastructure/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { TenantInterceptor } from './shared/tenant/infrastructure/interceptors/tenant.interceptor';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -41,8 +44,14 @@ import { ScheduleModule } from '@nestjs/schedule';
     ChronogestSchedulesModule,
     ChronogestRequestsModule,
     AuthModule,
+    JwtModule.register({}),
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantInterceptor,
+    },
+  ],
 })
 export class AppModule { }

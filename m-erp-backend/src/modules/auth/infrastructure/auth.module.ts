@@ -12,10 +12,11 @@ import { Usuario } from '../../erp-users/domain/usuario.entity';
 import { Credencial } from '../../erp-users/domain/credencial.entity';
 import { Acceso } from '../../erp-users/domain/acceso.entity';
 import { Aplicativo } from '../../erp-users/domain/aplicativo.entity';
+import { Tenant } from '../../erp-centers/domain/entities/tenant.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario, Credencial, Acceso, Aplicativo]),
+    TypeOrmModule.forFeature([Usuario, Credencial, Acceso, Aplicativo, Tenant]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
