@@ -162,7 +162,7 @@ export class DashboardService {
           ultimasSolicitudes: solicitudesArr.filter((s: any) => s.estado === 'PENDIENTE' || s.estado === 'ENVIADO_ADMIN').slice(0, 5),
           ambientesList: ambientesList.slice(0, 6),
           clasesSuspendidas,
-          clasesTiempoReal: registroClasesArr.slice(0, 6)
+          clasesTiempoReal: clasesActivas.slice(0, 6)
         });
         
         if (showSpinner) this.isLoading.set(false);

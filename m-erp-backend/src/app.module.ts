@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 import { DatabaseModule } from './shared/database/database.module';
 import { ErpLocationsModule } from './modules/erp-locations/erp-locations.module';
 import { ErpUsersModule } from './modules/erp-users/erp-users.module';
@@ -16,6 +18,18 @@ import { ScheduleModule } from '@nestjs/schedule';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: async () => ({
+        store: await redisStore({
+          socket: {
+            host: 'localhost',
+            port: 6379,
+          },
+          ttl: 1800000, // 1800 seconds (cache-manager-redis-yet uses milliseconds in v5, wait, nestjs uses milliseconds now in v5) Let's just pass 1800000 for 1800s. Wait, if it's cache-manager v5, TTL is in milliseconds. 1800 * 1000 = 1800000.
+        }),
+      }),
     }),
     ScheduleModule.forRoot(),
     DatabaseModule,
