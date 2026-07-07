@@ -44,4 +44,7 @@ export class HorarioDetalle {
 
   @Column({ type: 'date', nullable: true })
   fecha_fin_competencia?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

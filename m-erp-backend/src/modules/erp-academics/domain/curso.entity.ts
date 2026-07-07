@@ -55,4 +55,7 @@ export class Curso {
   @ManyToOne(() => Persona)
   @JoinColumn({ name: 'lider_id' })
   lider!: Persona;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

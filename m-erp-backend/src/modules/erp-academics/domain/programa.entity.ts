@@ -25,4 +25,7 @@ export class Programa {
   @ManyToOne(() => Area)
   @JoinColumn({ name: 'area_id' })
   area!: Area;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

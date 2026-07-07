@@ -38,4 +38,7 @@ export class Usuario {
 
   @CreateDateColumn()
   fecha_creacion!: Date;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

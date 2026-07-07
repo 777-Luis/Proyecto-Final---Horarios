@@ -44,4 +44,7 @@ export class SolicitudCambio {
 
   @Column({ type: 'timestamp', nullable: true })
   fecha_respuesta_admin!: Date;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

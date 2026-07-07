@@ -21,4 +21,7 @@ export class Ambiente {
 
   @Column({ type: 'int', default: 0 })
   capacidad!: number;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

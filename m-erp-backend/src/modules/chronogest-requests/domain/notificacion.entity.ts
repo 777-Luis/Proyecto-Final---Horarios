@@ -30,4 +30,7 @@ export class Notificacion {
   @ManyToOne(() => SolicitudCambio, { nullable: true })
   @JoinColumn({ name: 'referencia_solicitud_id' })
   referencia_solicitud!: SolicitudCambio;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

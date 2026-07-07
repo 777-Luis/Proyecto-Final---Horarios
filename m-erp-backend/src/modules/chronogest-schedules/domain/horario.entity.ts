@@ -29,4 +29,7 @@ export class Horario {
 
   @OneToMany(() => HorarioDetalle, (detalle: HorarioDetalle) => detalle.horario)
   detalles!: HorarioDetalle[];
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

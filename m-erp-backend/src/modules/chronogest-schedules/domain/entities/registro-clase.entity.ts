@@ -75,4 +75,7 @@ export class RegistroClase {
 
   @UpdateDateColumn()
   updated_at!: Date;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

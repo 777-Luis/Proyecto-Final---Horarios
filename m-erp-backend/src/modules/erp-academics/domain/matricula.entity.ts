@@ -27,4 +27,7 @@ export class Matricula {
 
   @CreateDateColumn()
   fecha_matricula!: Date;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }

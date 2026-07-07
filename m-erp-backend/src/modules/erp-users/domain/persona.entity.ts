@@ -46,4 +46,7 @@ export class Persona {
 
   @Column({ type: 'boolean', default: true })
   estado!: boolean;
+
+  @Column({ type: 'uuid', nullable: true })
+  sede_id?: string;
 }
