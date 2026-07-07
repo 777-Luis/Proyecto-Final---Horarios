@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { superAdminGuard } from './core/guards/superadmin.guard';
 import { LayoutComponent } from './shared/components/layout/layout.component';
 
 export const routes: Routes = [
@@ -76,6 +77,22 @@ export const routes: Routes = [
         ]
       },
       { path: '', redirectTo: 'auth/login', pathMatch: 'full' }
+    ]
+  },
+  {
+    path: 'superadmin/login',
+    loadComponent: () => import('./features/superadmin/login/login.component').then(m => m.SuperadminLoginComponent)
+  },
+  {
+    path: 'superadmin',
+    loadComponent: () => import('./shared/components/layout/superadmin-layout/superadmin-layout.component').then(m => m.SuperadminLayoutComponent),
+    canActivate: [superAdminGuard],
+    children: [
+      { path: 'dashboard', loadComponent: () => import('./features/superadmin/dashboard/dashboard.component').then(m => m.SuperadminDashboardComponent) },
+      { path: 'sedes', loadComponent: () => import('./features/superadmin/sedes/sedes.component').then(m => m.SuperadminSedesComponent) },
+      { path: 'usuarios', loadComponent: () => import('./features/superadmin/usuarios/usuarios.component').then(m => m.SuperadminUsuariosComponent) },
+      { path: 'reportes', loadComponent: () => import('./features/superadmin/reportes/reportes.component').then(m => m.SuperadminReportesComponent) },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
   { path: '**', redirectTo: 'auth/login' }

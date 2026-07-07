@@ -8,6 +8,7 @@ export interface UserContext {
   userId: string;
   role: string;
   personaId: string;
+  isSuperAdmin?: boolean;
 }
 
 @Injectable({
@@ -28,6 +29,8 @@ export class AuthService {
   readonly currentRole = computed(() => this.userContextSignal()?.role || null);
   readonly isLeader = computed(() => this.isLiderSignal());
   readonly isLeaderFicha = computed(() => this.isLiderFichaSignal());
+  readonly isSuperAdmin = computed(() => this.userContextSignal()?.isSuperAdmin === true);
+  readonly currentUserValue = this.userContextSignal; // Expose directly for guards if needed
 
   // APIs definitions
   private apiUrl = 'http://localhost:3000/api/erp/v1';
@@ -55,26 +58,36 @@ export class AuthService {
   login(credentials: any) {
     return this.http.post<{ access_token: string }>(`${this.apiUrl}/auth/login`, credentials).pipe(
       tap((res) => {
-        const token = res.access_token;
-        this.tokenSignal.set(token);
-        localStorage.setItem('access_token', token);
-        
-        // Naive JWT decode fallback to extract context if necessary, 
-        // assuming standard base64 structure.
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const context: UserContext = {
-             userId: payload.userId,
-             role: payload.role,
-             personaId: payload.personaId
-          };
-          this.userContextSignal.set(context);
-          localStorage.setItem('user_context', JSON.stringify(context));
-          
-          this.detectLeaderState();
-        } catch(e) {}
+        this.handleToken(res.access_token);
       })
     );
+  }
+
+  superadminLogin(credentials: any) {
+    return this.http.post<{ access_token: string }>(`${this.apiUrl}/auth/superadmin/login`, credentials).pipe(
+      tap((res) => {
+        this.handleToken(res.access_token);
+      })
+    );
+  }
+
+  private handleToken(token: string) {
+    this.tokenSignal.set(token);
+    localStorage.setItem('access_token', token);
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const context: UserContext = {
+         userId: payload.userId,
+         role: payload.role,
+         personaId: payload.personaId,
+         isSuperAdmin: payload.isSuperAdmin
+      };
+      this.userContextSignal.set(context);
+      localStorage.setItem('user_context', JSON.stringify(context));
+      
+      this.detectLeaderState();
+    } catch(e) {}
   }
 
   logout() {

@@ -87,6 +87,11 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
                Volver al inicio
             </button>
           </div>
+
+          <div class="superadmin-link">
+            <span>¿Eres Super Administrador?</span>
+            <a (click)="goToSuperAdmin()">Ingresar como SuperAdmin</a>
+          </div>
         </div>
       </div>
     </div>
@@ -376,6 +381,22 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
       background: #F3F4F6;
       color: #111827;
     }
+
+    .superadmin-link {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #6B7280;
+    }
+    .superadmin-link a {
+      color: #16A34A;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+    .superadmin-link a:hover {
+      text-decoration: underline;
+    }
   `]
 })
 export class LoginComponent {
@@ -426,5 +447,9 @@ export class LoginComponent {
 
   goToLanding() {
     this.router.navigate(['/inicio']);
+  }
+
+  goToSuperAdmin() {
+    this.router.navigate(['/superadmin/login']);
   }
 }

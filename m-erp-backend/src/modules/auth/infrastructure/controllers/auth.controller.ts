@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, UseGuards, Req, Ip } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from '../../application/auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { ForgotPasswordDto } from './dtos/forgot-password.dto';
@@ -13,7 +14,14 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Ip() ip: string) {
-    return this.authService.login(loginDto, ip);
+    const finalIp = ip || 'unknown';
+    return this.authService.login(loginDto, finalIp);
+  }
+
+  @Post('superadmin/login')
+  async superadminLogin(@Body() dto: any, @Ip() ip: string) {
+    const finalIp = ip || 'unknown';
+    return this.authService.superadminLogin(dto, finalIp);
   }
 
   @Post('forgot-password')

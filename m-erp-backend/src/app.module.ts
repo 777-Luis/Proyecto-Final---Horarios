@@ -15,6 +15,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TenantInterceptor } from './shared/tenant/infrastructure/interceptors/tenant.interceptor';
 import { JwtModule } from '@nestjs/jwt';
+import { SuperadminModule } from './modules/superadmin/superadmin.module';
+
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { JwtModule } from '@nestjs/jwt';
     ChronogestSchedulesModule,
     ChronogestRequestsModule,
     AuthModule,
+    SuperadminModule,
     JwtModule.register({}),
   ],
   controllers: [],

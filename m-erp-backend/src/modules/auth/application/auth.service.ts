@@ -35,6 +35,80 @@ export class AuthService {
     });
   }
 
+  async superadminLogin(dto: any, ip: string) {
+    const credencial = await this.credencialRepo.findOne({ where: { username: dto.username } });
+    if (!credencial) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    const isMatch = await bcrypt.compare(dto.password, credencial.password_hash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    if (!credencial.codigo_acceso || !(await bcrypt.compare(dto.codigo_acceso, credencial.codigo_acceso))) {
+      throw new UnauthorizedException('Código de acceso inválido');
+    }
+
+    const queryRunner = this.usuarioRepo.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    let usuario;
+    try {
+      await queryRunner.query(`SET rls.is_superadmin = 'true'`);
+      usuario = await queryRunner.manager.findOne(Usuario, {
+        where: { credencial: { id: credencial.id } },
+        relations: ['rol', 'persona'],
+      });
+    } finally {
+      await queryRunner.query(`RESET rls.is_superadmin`);
+      await queryRunner.release();
+    }
+
+    if (!usuario || !usuario.estado) {
+      throw new UnauthorizedException('Usuario inactivo o no encontrado');
+    }
+
+    if (usuario.rol.nombre !== 'superadmin') {
+      throw new UnauthorizedException('No tienes permisos de Super Administrador');
+    }
+
+    const payload = {
+      username: credencial.username,
+      role: usuario.rol.nombre,
+      userId: usuario.id,
+      personaId: usuario.persona.id,
+      persona_id: usuario.persona.id,
+      rol: usuario.rol.nombre,
+      sede_id: null,
+      isSuperAdmin: true,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    credencial.ultimo_acceso = new Date();
+    await this.credencialRepo.save(credencial);
+
+    const aplicativo = await this.aplicativoRepo.findOne({ where: { nombre: 'Principal' } });
+    if (aplicativo) {
+      const acceso = this.accesoRepo.create({
+        ip,
+        usuario,
+        aplicativo,
+      });
+      await this.accesoRepo.save(acceso);
+    }
+
+    return {
+      access_token: token,
+      user: {
+        id: usuario.id,
+        username: credencial.username,
+        role: usuario.rol.nombre,
+        nombre: usuario.persona.nombre,
+      },
+    };
+  }
+
   async login(loginDto: LoginDto, ip: string) {
     const credencial = await this.credencialRepo.findOne({ where: { username: loginDto.username } });
     if (!credencial) {

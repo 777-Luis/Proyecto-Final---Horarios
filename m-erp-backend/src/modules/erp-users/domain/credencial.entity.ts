@@ -11,6 +11,9 @@ export class Credencial {
   @Column({ type: 'varchar', length: 255 })
   password_hash!: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  codigo_acceso!: string | null;
+
   @Column({ type: 'timestamp', nullable: true })
   ultimo_acceso!: Date;
 }
