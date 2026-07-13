@@ -33,7 +33,7 @@ export class TenantInterceptor implements NestInterceptor {
           sedeId = payload.sede_id;
           isSuperAdmin = payload.isSuperAdmin === true;
         }
-      } catch (e) {
+      } catch {
         // Ignore token errors here, AuthGuard handles validation
       }
     }

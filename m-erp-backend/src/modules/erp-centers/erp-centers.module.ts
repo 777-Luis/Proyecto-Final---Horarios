@@ -14,12 +14,10 @@ import { AmbientesService } from './application/ambientes.service';
 import { AmbientesController } from './infrastructure/controllers/ambientes.controller';
 import { CentersService } from './application/centers.service';
 import { CentrosController, SedesController } from './infrastructure/controllers/centers.controller';
-import { TenantsService } from './application/tenants.service';
-import { TenantsController } from './infrastructure/controllers/tenants.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CentroFormacion, Sede, Area, Ambiente, Tenant, Curso, Programa, Usuario])],
-  controllers: [AreasController, AmbientesController, CentrosController, SedesController, TenantsController],
-  providers: [AreasService, AmbientesService, CentersService, TenantsService],
+  controllers: [AreasController, AmbientesController, CentrosController, SedesController],
+  providers: [AreasService, AmbientesService, CentersService],
 })
 export class ErpCentersModule {}

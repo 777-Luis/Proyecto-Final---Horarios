@@ -1,4 +1,4 @@
-import { Controller, Post, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Res, HttpStatus, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import type { Response } from 'express';
@@ -8,7 +8,9 @@ import { Rol } from '../../domain/rol.entity';
 import { Persona } from '../../domain/persona.entity';
 import { Usuario } from '../../domain/usuario.entity';
 import { Credencial } from '../../domain/credencial.entity';
+import { NotInProductionGuard } from '../../../../shared/guards/not-in-production.guard';
 
+@UseGuards(NotInProductionGuard)
 @Controller('seed')
 export class SeedAdminController {
   constructor(
