@@ -199,67 +199,60 @@ export class UsersService {
       if (!areaObj) throw new NotFoundException('Área no encontrada.');
     }
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // These saves run under the request-scoped transaction (started by
+    // TenantInterceptor) via the injected repositories, instead of a standalone
+    // queryRunner/connection, so they share the same RLS tenant context as the
+    // rest of the request.
 
-    try {
-      // 1. Create Persona
-      const persona = this.personaRepo.create({
-        nombre: dto.nombre,
-        apellido: dto.apellido,
-        cargo: ['Aprendiz', 'Instructor', 'Administrador'].includes(dto.rol_nombre) ? dto.rol_nombre as any : null,
-        tipo_documento: dto.tipo_documento,
-        numero_documento: dto.numero_documento,
-        correo: dto.correo,
-        direccion: dto.direccion,
-        municipio: municipio,
-        genero: dto.genero,
-      });
-      await queryRunner.manager.save(persona);
+    // 1. Create Persona
+    const persona = this.personaRepo.create({
+      nombre: dto.nombre,
+      apellido: dto.apellido,
+      cargo: ['Aprendiz', 'Instructor', 'Administrador'].includes(dto.rol_nombre) ? dto.rol_nombre as any : null,
+      tipo_documento: dto.tipo_documento,
+      numero_documento: dto.numero_documento,
+      correo: dto.correo,
+      direccion: dto.direccion,
+      municipio: municipio,
+      genero: dto.genero,
+    });
+    await this.personaRepo.save(persona);
 
-      // 2. Create Credencial
-      const salt = await bcrypt.genSalt(10);
-      const hash = await bcrypt.hash(dto.password, salt);
-      const generatedUsername = await this.generateUniqueUsername(dto.nombre, dto.apellido);
-      const credencial = this.credencialRepo.create({
-        username: generatedUsername,
-        password_hash: hash,
-        ultimo_acceso: new Date(),
-      });
-      await queryRunner.manager.save(credencial);
+    // 2. Create Credencial
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(dto.password, salt);
+    const generatedUsername = await this.generateUniqueUsername(dto.nombre, dto.apellido);
+    const credencial = this.credencialRepo.create({
+      username: generatedUsername,
+      password_hash: hash,
+      ultimo_acceso: new Date(),
+    });
+    await this.credencialRepo.save(credencial);
 
-      // 3. Create Usuario
-      const usuario = this.usuarioRepo.create({
-        persona,
-        credencial,
-        rol,
-        area: areaObj || undefined,
-      });
-      await queryRunner.manager.save(usuario);
+    // 3. Create Usuario
+    const usuario = this.usuarioRepo.create({
+      persona,
+      credencial,
+      rol,
+      area: areaObj || undefined,
+    });
+    await this.usuarioRepo.save(usuario);
 
-      // 4. Assign Aplicativos permissions
-      if (dto.aplicativos_ids && dto.aplicativos_ids.length > 0) {
-        for (const appId of dto.aplicativos_ids) {
-          const apiObj = await this.aplicativoRepo.findOne({ where: { id: appId } });
-          if (apiObj) {
-            const permiso = this.permisoRepo.create({
-              usuario: usuario,
-              aplicativo: apiObj,
-            });
-            await queryRunner.manager.save(permiso);
-          }
+    // 4. Assign Aplicativos permissions
+    if (dto.aplicativos_ids && dto.aplicativos_ids.length > 0) {
+      for (const appId of dto.aplicativos_ids) {
+        const apiObj = await this.aplicativoRepo.findOne({ where: { id: appId } });
+        if (apiObj) {
+          const permiso = this.permisoRepo.create({
+            usuario: usuario,
+            aplicativo: apiObj,
+          });
+          await this.permisoRepo.save(permiso);
         }
       }
-
-      await queryRunner.commitTransaction();
-      return { message: 'Usuario creado exitosamente', id: usuario.id, username: credencial.username };
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
     }
+
+    return { message: 'Usuario creado exitosamente', id: usuario.id, username: credencial.username };
   }
 
   async toggleStatus(id: string) {
@@ -279,65 +272,53 @@ export class UsersService {
     });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Update Persona
-      if (dto.municipio_id) {
-        const municipio = await this.municipioRepo.findOne({ where: { id: dto.municipio_id } });
-        if (municipio) usuario.persona.municipio = municipio;
-      }
-      usuario.persona.nombre = dto.nombre ?? usuario.persona.nombre;
-      usuario.persona.apellido = dto.apellido ?? usuario.persona.apellido;
-      usuario.persona.tipo_documento = dto.tipo_documento ?? usuario.persona.tipo_documento;
-      usuario.persona.numero_documento = dto.numero_documento ?? usuario.persona.numero_documento;
-      usuario.persona.correo = dto.correo ?? usuario.persona.correo;
-      usuario.persona.direccion = dto.direccion ?? usuario.persona.direccion;
-      usuario.persona.genero = dto.genero ?? usuario.persona.genero;
-      await queryRunner.manager.save(usuario.persona);
-
-      // Update Rol & Area
-      let targetRole = usuario.rol?.nombre;
-      if (dto.rol_nombre && usuario.rol?.nombre !== dto.rol_nombre) {
-        let rol = await this.rolRepo.findOne({ where: { nombre: dto.rol_nombre } });
-        if (!rol) {
-          rol = this.rolRepo.create({ nombre: dto.rol_nombre, descripcion: `Rol del sistema: ${dto.rol_nombre}` });
-          await this.rolRepo.save(rol);
-        }
-        usuario.rol = rol;
-        targetRole = dto.rol_nombre;
-      }
-
-      if (targetRole === 'Instructor') {
-        if (dto.area_id) {
-          const areaObj = await this.areaRepo.findOne({ where: { id: dto.area_id } });
-          if (!areaObj) throw new NotFoundException('Área no encontrada.');
-          usuario.area = areaObj;
-        } else if (!usuario.area) {
-          throw new ConflictException('El campo area_id es obligatorio para el rol Instructor.');
-        }
-      } else {
-        usuario.area = null as any; 
-      }
-      await queryRunner.manager.save(usuario);
-
-      // Update Credencial (Password)
-      if (dto.password && dto.password.trim() !== '') {
-        const salt = await bcrypt.genSalt(10);
-        usuario.credencial.password_hash = await bcrypt.hash(dto.password, salt);
-        await queryRunner.manager.save(usuario.credencial);
-      }
-
-      await queryRunner.commitTransaction();
-      return { message: 'Usuario actualizado exitosamente' };
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
+    // Update Persona
+    if (dto.municipio_id) {
+      const municipio = await this.municipioRepo.findOne({ where: { id: dto.municipio_id } });
+      if (municipio) usuario.persona.municipio = municipio;
     }
+    usuario.persona.nombre = dto.nombre ?? usuario.persona.nombre;
+    usuario.persona.apellido = dto.apellido ?? usuario.persona.apellido;
+    usuario.persona.tipo_documento = dto.tipo_documento ?? usuario.persona.tipo_documento;
+    usuario.persona.numero_documento = dto.numero_documento ?? usuario.persona.numero_documento;
+    usuario.persona.correo = dto.correo ?? usuario.persona.correo;
+    usuario.persona.direccion = dto.direccion ?? usuario.persona.direccion;
+    usuario.persona.genero = dto.genero ?? usuario.persona.genero;
+    await this.personaRepo.save(usuario.persona);
+
+    // Update Rol & Area
+    let targetRole = usuario.rol?.nombre;
+    if (dto.rol_nombre && usuario.rol?.nombre !== dto.rol_nombre) {
+      let rol = await this.rolRepo.findOne({ where: { nombre: dto.rol_nombre } });
+      if (!rol) {
+        rol = this.rolRepo.create({ nombre: dto.rol_nombre, descripcion: `Rol del sistema: ${dto.rol_nombre}` });
+        await this.rolRepo.save(rol);
+      }
+      usuario.rol = rol;
+      targetRole = dto.rol_nombre;
+    }
+
+    if (targetRole === 'Instructor') {
+      if (dto.area_id) {
+        const areaObj = await this.areaRepo.findOne({ where: { id: dto.area_id } });
+        if (!areaObj) throw new NotFoundException('Área no encontrada.');
+        usuario.area = areaObj;
+      } else if (!usuario.area) {
+        throw new ConflictException('El campo area_id es obligatorio para el rol Instructor.');
+      }
+    } else {
+      usuario.area = null as any;
+    }
+    await this.usuarioRepo.save(usuario);
+
+    // Update Credencial (Password)
+    if (dto.password && dto.password.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      usuario.credencial.password_hash = await bcrypt.hash(dto.password, salt);
+      await this.credencialRepo.save(usuario.credencial);
+    }
+
+    return { message: 'Usuario actualizado exitosamente' };
   }
 
   async deleteIndividual(id: string) {
@@ -347,29 +328,17 @@ export class UsersService {
     });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Because of constraints, we delete Permisos/Matriculas/etc manually or rely on cascading.
-      // Usually, deleting the user propagates. If it fails, manual deletions are needed!
-      await queryRunner.query(`DELETE FROM accesos WHERE usuario_id = $1`, [usuario.id]);
-      await queryRunner.query(`DELETE FROM permisos WHERE usuario_id = $1`, [usuario.id]);
-      if (usuario.persona) {
-        await queryRunner.query(`DELETE FROM matriculas WHERE aprendiz_id = $1`, [usuario.persona.id]);
-      }
-      await queryRunner.manager.delete(Usuario, usuario.id);
-      if (usuario.credencial) await queryRunner.manager.delete(Credencial, usuario.credencial.id);
-      if (usuario.persona) await queryRunner.manager.delete(Persona, usuario.persona.id);
-      await queryRunner.commitTransaction();
-      return { message: 'Usuario eliminado exitosamente' };
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
+    // Because of constraints, we delete Permisos/Matriculas/etc manually or rely on cascading.
+    // Usually, deleting the user propagates. If it fails, manual deletions are needed!
+    await this.dataSource.query(`DELETE FROM accesos WHERE usuario_id = $1`, [usuario.id]);
+    await this.dataSource.query(`DELETE FROM permisos WHERE usuario_id = $1`, [usuario.id]);
+    if (usuario.persona) {
+      await this.dataSource.query(`DELETE FROM matriculas WHERE aprendiz_id = $1`, [usuario.persona.id]);
     }
+    await this.usuarioRepo.delete(usuario.id);
+    if (usuario.credencial) await this.credencialRepo.delete(usuario.credencial.id);
+    if (usuario.persona) await this.personaRepo.delete(usuario.persona.id);
+    return { message: 'Usuario eliminado exitosamente' };
   }
 
   async getPoblacionStats() {

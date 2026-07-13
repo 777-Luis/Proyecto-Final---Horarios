@@ -148,35 +148,28 @@ export class CursosService {
     const curso = await this.cursoRepo.findOne({ where: { id } });
     if (!curso) throw new NotFoundException(`Curso con ID ${id} no encontrado`);
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    // Uses the request-scoped transaction (started by TenantInterceptor) via
+    // this.dataSource.manager, instead of a standalone queryRunner/connection,
+    // so these deletes run under the same RLS tenant context as the rest of the request.
+    const manager = this.dataSource.manager;
 
-    try {
-      await queryRunner.manager.query(`DELETE FROM matriculas WHERE curso_id = $1`, [id]);
+    await manager.query(`DELETE FROM matriculas WHERE curso_id = $1`, [id]);
 
-      const horarios = await queryRunner.manager.query(`SELECT id FROM horarios WHERE curso_id = $1`, [id]);
-      if (horarios.length > 0) {
-        const horarioId = horarios[0].id;
-        await queryRunner.manager.query(`
-          DELETE FROM registro_clases 
-          WHERE horario_detalle_id IN (
-            SELECT id FROM horario_detalle WHERE horario_id = $1
-          )
-        `, [horarioId]);
-        await queryRunner.manager.query(`DELETE FROM horario_detalle WHERE horario_id = $1`, [horarioId]);
-        await queryRunner.manager.query(`DELETE FROM horarios WHERE id = $1`, [horarioId]);
-      }
-
-      await queryRunner.manager.delete(Curso, id);
-
-      await queryRunner.commitTransaction();
-      return { deleted: true };
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
+    const horarios = await manager.query(`SELECT id FROM horarios WHERE curso_id = $1`, [id]);
+    if (horarios.length > 0) {
+      const horarioId = horarios[0].id;
+      await manager.query(`
+        DELETE FROM registro_clases
+        WHERE horario_detalle_id IN (
+          SELECT id FROM horario_detalle WHERE horario_id = $1
+        )
+      `, [horarioId]);
+      await manager.query(`DELETE FROM horario_detalle WHERE horario_id = $1`, [horarioId]);
+      await manager.query(`DELETE FROM horarios WHERE id = $1`, [horarioId]);
     }
+
+    await manager.delete(Curso, id);
+
+    return { deleted: true };
   }
 }
