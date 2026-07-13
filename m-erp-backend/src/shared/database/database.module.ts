@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
 import { getTypeOrmConfig } from '../../config/database.config';
+import { SedeIdSubscriber } from '../tenant/infrastructure/subscribers/sede-id.subscriber';
 
 @Module({
   imports: [
@@ -19,5 +20,6 @@ import { getTypeOrmConfig } from '../../config/database.config';
       },
     }),
   ],
+  providers: [SedeIdSubscriber],
 })
 export class DatabaseModule {}
